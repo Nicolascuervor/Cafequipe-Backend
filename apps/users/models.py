@@ -3,12 +3,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 class User(AbstractUser):
-    """
-    Usuario personalizado de CafeQuipe.
-    username se asigna automáticamente igual al email
-    para mantener compatibilidad con AbstractUser.
-    El login se hace siempre con email + contraseña vía JWT.
-    """
 
     email = models.EmailField(unique=True)
 
