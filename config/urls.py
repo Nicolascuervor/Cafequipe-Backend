@@ -18,14 +18,12 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
-    # Auth — JWT tokens
-    path('api/auth/', include('apps.users.urls')),
-
-    # Módulos de negocio
-    path('api/inventory/', include('apps.inventory.urls')),
-    path('api/movements/', include('apps.movements.urls')),
-    path('api/production/', include('apps.production.urls')),
-    path('api/reports/', include('apps.reports.urls')),
+    # ── API v1 ────────────────────────────────
+    path('api/v1/auth/', include('apps.users.urls')),
+    path('api/v1/inventory/', include('apps.inventory.urls')),
+    path('api/v1/movements/', include('apps.movements.urls')),
+    path('api/v1/production/', include('apps.production.urls')),
+    path('api/v1/reports/', include('apps.reports.urls')),
 ]
 
 # Servir archivos media en desarrollo

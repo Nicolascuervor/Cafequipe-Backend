@@ -5,27 +5,24 @@ from django.db import models
 class User(AbstractUser):
     """
     Usuario personalizado de CafeQuipe.
-    Extiende AbstractUser para agregar el rol del sistema.
-    Se define ANTES de la primera migración — no puede cambiarse después.
+    username se asigna automáticamente igual al email
+    para mantener compatibilidad con AbstractUser.
+    El login se hace siempre con email + contraseña vía JWT.
     """
-    
-    USERNAME_FIELD = 'email'
+
     email = models.EmailField(unique=True)
-    REQUIRED_FIELDS = []
-    
-    
+
     class Rol(models.TextChoices):
-        GERENTE = 'GER', 'Gerente'
-        JEFE_BODEGA = 'JBD', 'Jefe de Bodega'
+        GERENTE         = 'GER', 'Gerente'
+        JEFE_BODEGA     = 'JBD', 'Jefe de Bodega'
         JEFE_PRODUCCION = 'JPR', 'Jefe de Producción'
-        OPERARIO = 'OPR', 'Operario'
+        OPERARIO        = 'OPR', 'Operario'
 
     rol = models.CharField(
         max_length=3,
         choices=Rol.choices,
         default=Rol.OPERARIO
     )
-   
     telefono = models.CharField(max_length=20, blank=True)
 
     class Meta:
@@ -42,6 +39,10 @@ class User(AbstractUser):
     @property
     def es_jefe_bodega(self):
         return self.rol == self.Rol.JEFE_BODEGA
+
+    @property
+    def es_jefe_operario(self):
+        return self.rol == self.Rol.OPERARIO
 
     @property
     def puede_aprobar_traslados(self):

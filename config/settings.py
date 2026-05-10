@@ -157,7 +157,7 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': True,
     'ALGORITHM': 'HS256',
     'AUTH_HEADER_TYPES': ('Bearer',),
-    'TOKEN_OBTAIN_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
+    'TOKEN_OBTAIN_SERIALIZER': 'apps.users.serializers.CustomTokenObtainPairSerializer',
 }
 
 # ─────────────────────────────────────────────
@@ -167,9 +167,17 @@ SIMPLE_JWT = {
 # ─────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = env.list(
     'CORS_ALLOWED_ORIGINS',
-    default=['http://localhost:5173', 'http://localhost:3000']
+    default=['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8081', 'http://localhost:8000']
 )
-CORS_ALLOW_CREDENTIALS = True  # Necesario para enviar cookies con JWT
+CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL', default=DEBUG)
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'authorization',
+    'content-type',
+    'origin',
+    'x-requested-with',
+]
 
 # ─────────────────────────────────────────────
 # SWAGGER / OPENAPI — drf-spectacular
