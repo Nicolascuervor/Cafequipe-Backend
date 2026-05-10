@@ -27,4 +27,6 @@ dist/
 # Windows
 Thumbs.db
 Desktop.ini
-test_users_api
+# Scripts de prueba locales
+test_*.py
+test_users_api.py
