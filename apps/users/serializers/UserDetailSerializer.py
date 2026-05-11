@@ -20,9 +20,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name',
             'rol', 'rol_display', 'telefono',
             'full_name', 'is_active',
-            'date_joined', 'last_login',
+            'date_joined', 'updated_at', 'last_login',
         ]
         read_only_fields = [
-            'id', 'email', 'rol', 'is_active',
-            'date_joined', 'last_login',
+            'id', 'email', 'rol',
+            'date_joined', 'updated_at', 'last_login',
         ]

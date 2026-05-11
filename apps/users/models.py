@@ -18,6 +18,7 @@ class User(AbstractUser):
         default=Rol.OPERARIO
     )
     telefono = models.CharField(max_length=20, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = 'Usuario'

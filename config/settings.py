@@ -46,7 +46,6 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    'core',
     'apps.users',
     'apps.inventory',
     'apps.movements',
