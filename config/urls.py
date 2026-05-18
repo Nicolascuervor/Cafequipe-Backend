@@ -20,6 +20,7 @@ urlpatterns = [
 
     # ── API v1 ────────────────────────────────
     path('api/v1/auth/', include('apps.users.urls')),
+    path('api/v1/audit/', include('apps.audit.urls')),
     path('api/v1/inventory/', include('apps.inventory.urls')),
     path('api/v1/movements/', include('apps.movements.urls')),
     path('api/v1/production/', include('apps.production.urls')),

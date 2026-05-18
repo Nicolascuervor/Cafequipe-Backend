@@ -5,8 +5,11 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenBlacklistView
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
+from apps.audit.models import AuditLog
+from apps.audit.services import create_audit_log
 from .permissions import EsGerente, EsGerenteOSoloLectura
 from .serializers import (
     UserRegisterSerializer,
@@ -16,6 +19,56 @@ from .serializers import (
 )
 
 User = get_user_model()
+
+
+# ── Auth con Auditoría ─────────────────────────
+
+@extend_schema(
+    tags=['Auth'],
+    summary='Iniciar sesión',
+    description='Autentica al usuario y devuelve los tokens JWT. '
+                'Registra la acción en el log de auditoría.',
+)
+class AuditedLoginView(TokenObtainPairView):
+    """Login que registra la acción en auditoría."""
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            # El serializer ya validó las credenciales y el user está disponible
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid()
+            user = serializer.user
+            create_audit_log(
+                user=user,
+                action=AuditLog.Action.LOGIN,
+                module=AuditLog.Module.AUTH,
+                description='Inicio de sesión exitoso.',
+                request=request,
+            )
+        return response
+
+
+@extend_schema(
+    tags=['Auth'],
+    summary='Cerrar sesión',
+    description='Invalida el refresh token y registra la acción en auditoría.',
+)
+class AuditedLogoutView(TokenBlacklistView):
+    """Logout que registra la acción en auditoría."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            create_audit_log(
+                user=request.user,
+                action=AuditLog.Action.LOGOUT,
+                module=AuditLog.Module.AUTH,
+                description='Cierre de sesión.',
+                request=request,
+            )
+        return response
 
 
 @extend_schema(
@@ -118,5 +171,17 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     http_method_names = ['get', 'patch', 'delete']
 
     def perform_destroy(self, instance):
+        from apps.audit.models import AuditLog
+        from apps.audit.services import create_audit_log
+
         instance.is_active = False
         instance.save(update_fields=['is_active'])
+
+        create_audit_log(
+            user=self.request.user,
+            action=AuditLog.Action.USER_DEACTIVATED,
+            module=AuditLog.Module.USERS,
+            description=f'Usuario {instance.email} desactivado por {self.request.user.email}.',
+            request=self.request,
+        )
+
