@@ -22,7 +22,7 @@ User = get_user_model()
     tags=['Auth'],
     summary='Registrar usuario nuevo',
     description='Solo el Gerente puede crear cuentas. '
-                'El username se asigna automáticamente igual al email.',
+                'El email es el identificador único de autenticación.',
 )
 class UserRegisterView(generics.CreateAPIView):
    

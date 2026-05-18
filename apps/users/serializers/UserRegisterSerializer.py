@@ -67,9 +67,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
 
-        # username = email para mantener compatibilidad con AbstractUser
-        validated_data['username'] = validated_data['email']
-
         user = User.objects.create_user(
             password=password,
             **validated_data

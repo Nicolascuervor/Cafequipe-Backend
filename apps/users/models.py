@@ -1,10 +1,43 @@
 # apps/users/models.py
-from django.contrib.auth.models import AbstractUser
+import uuid
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+
+
+class UserManager(BaseUserManager):
+    """
+    Manager personalizado que usa email como único identificador
+    de autenticación en lugar de username.
+    """
+
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('El email es obligatorio.')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser debe tener is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser debe tener is_superuser=True.')
+
+        return self.create_user(email, password, **extra_fields)
+
 
 class User(AbstractUser):
 
-    email = models.EmailField(unique=True)
+    # ── Eliminamos username — email es la única fuente de verdad ──
+    username = None
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField('correo electrónico', unique=True)
 
     class Rol(models.TextChoices):
         GERENTE         = 'GER', 'Gerente'
@@ -19,6 +52,12 @@ class User(AbstractUser):
     )
     telefono = models.CharField(max_length=20, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # ── Autenticación por email ──
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name']
+
+    objects = UserManager()
 
     class Meta:
         verbose_name = 'Usuario'
