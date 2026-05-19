@@ -1,0 +1,1 @@
+# apps/inventory/migrations

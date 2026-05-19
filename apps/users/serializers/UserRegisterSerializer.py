@@ -7,6 +7,9 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 User = get_user_model()
 
 class UserRegisterSerializer(serializers.ModelSerializer):
+    url = serializers.HyperlinkedIdentityField(
+        view_name='users:user-detail', read_only=True,
+    )
     password = serializers.CharField(
         write_only=True,
         min_length=8,
@@ -22,7 +25,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'first_name', 'last_name',
+            'url', 'id', 'email', 'first_name', 'last_name',
             'rol', 'telefono',
             'password', 'password_confirm',
         ]

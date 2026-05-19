@@ -18,6 +18,19 @@ class AuditLog(models.Model):
         USER_DEACTIVATED = 'USER_DEACTIVATED', 'Usuario desactivado'
         USER_ACTIVATED   = 'USER_ACTIVATED',   'Usuario activado'
         PASSWORD_CHANGED = 'PASSWORD_CHANGED', 'Contraseña cambiada'
+        # Inventario
+        CATEGORIA_CREATED = 'CATEGORIA_CREATED', 'Categoría creada'
+        CATEGORIA_UPDATED = 'CATEGORIA_UPDATED', 'Categoría actualizada'
+        CATEGORIA_DELETED = 'CATEGORIA_DELETED', 'Categoría eliminada'
+        PRODUCTO_CREATED  = 'PRODUCTO_CREATED',  'Producto creado'
+        PRODUCTO_UPDATED  = 'PRODUCTO_UPDATED',  'Producto actualizado'
+        PRODUCTO_DELETED  = 'PRODUCTO_DELETED',  'Producto eliminado'
+        BODEGA_CREATED    = 'BODEGA_CREATED',    'Bodega creada'
+        BODEGA_UPDATED    = 'BODEGA_UPDATED',    'Bodega actualizada'
+        BODEGA_DELETED    = 'BODEGA_DELETED',    'Bodega eliminada'
+        STOCK_CREATED     = 'STOCK_CREATED',     'Stock registrado'
+        STOCK_UPDATED     = 'STOCK_UPDATED',     'Stock actualizado'
+        STOCK_DELETED     = 'STOCK_DELETED',     'Stock eliminado'
 
     class Module(models.TextChoices):
         AUTH       = 'AUTH',       'Autenticación'
