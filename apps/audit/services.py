@@ -17,7 +17,7 @@ def get_client_ip(request):
     return request.META.get('REMOTE_ADDR')
 
 
-def create_audit_log(*, user, action, module, description, request=None):
+def create_audit_log(*, user, action, module, description, request=None, user_email=None):
     """
     Crea un registro inmutable de auditoría.
 
@@ -27,10 +27,11 @@ def create_audit_log(*, user, action, module, description, request=None):
         module:      Valor de AuditLog.Module (ej. AuditLog.Module.AUTH).
         description: Texto breve describiendo la acción.
         request:     HttpRequest (opcional) para extraer la IP.
+        user_email:  Email del usuario manual (ej. en intento fallido de login).
     """
     return AuditLog.objects.create(
         user=user,
-        user_email=user.email if user else 'sistema',
+        user_email=user_email or (user.email if user else 'sistema'),
         action=action,
         module=module,
         description=description,

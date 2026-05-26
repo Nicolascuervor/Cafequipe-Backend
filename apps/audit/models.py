@@ -12,6 +12,7 @@ class AuditLog(models.Model):
 
     class Action(models.TextChoices):
         LOGIN            = 'LOGIN',            'Inicio de sesión'
+        LOGIN_FAILED     = 'LOGIN_FAILED',     'Intento de inicio de sesión fallido'
         LOGOUT           = 'LOGOUT',           'Cierre de sesión'
         USER_CREATED     = 'USER_CREATED',     'Usuario creado'
         USER_UPDATED     = 'USER_UPDATED',     'Usuario actualizado'

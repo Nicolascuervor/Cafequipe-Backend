@@ -18,35 +18,72 @@ from .serializers import (
     ChangePasswordSerializer,
 )
 
+from django.core.cache import cache
+from .throttles import LoginFailedThrottle
+
 User = get_user_model()
 
-
-# ── Auth con Auditoría ─────────────────────────
 
 @extend_schema(
     tags=['Auth'],
     summary='Iniciar sesión',
     description='Autentica al usuario y devuelve los tokens JWT. '
-                'Registra la acción en el log de auditoría.',
+                'Registra la acción en el log de auditoría. Aplica bloqueo temporal tras 5 intentos fallidos.',
 )
 class AuditedLoginView(TokenObtainPairView):
-    """Login que registra la acción en auditoría."""
+
+    throttle_classes = [LoginFailedThrottle]
 
     def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        if response.status_code == 200:
-            # El serializer ya validó las credenciales y el user está disponible
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid()
-            user = serializer.user
+        # Obtener IP para el cache de intentos fallidos
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        cache_key = f"login_failed_count_{ip}"
+
+        email = request.data.get('email', '')
+
+        try:
+            response = super().post(request, *args, **kwargs)
+            if response.status_code == 200:
+                # Éxito: Limpiar contador de intentos fallidos
+                cache.delete(cache_key)
+
+                # El serializer ya validó las credenciales y el user está disponible
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid()
+                user = serializer.user
+                create_audit_log(
+                    user=user,
+                    action=AuditLog.Action.LOGIN,
+                    module=AuditLog.Module.AUTH,
+                    description='Inicio de sesión exitoso.',
+                    request=request,
+                )
+            return response
+        except Exception as e:
+
+            failed_count = cache.get(cache_key, 0)
+            cache.set(cache_key, failed_count + 1, 900)
+            user_inst = None
+            if email:
+                try:
+                    user_inst = User.objects.filter(email=email).first()
+                except Exception:
+                    pass
+
             create_audit_log(
-                user=user,
-                action=AuditLog.Action.LOGIN,
+                user=user_inst,
+                user_email=email or 'desconocido',
+                action=AuditLog.Action.LOGIN_FAILED,
                 module=AuditLog.Module.AUTH,
-                description='Inicio de sesión exitoso.',
+                description='Intento de inicio de sesión fallido.',
                 request=request,
             )
-        return response
+
+            raise e
 
 
 @extend_schema(

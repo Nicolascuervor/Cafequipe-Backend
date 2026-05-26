@@ -120,6 +120,18 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # ─────────────────────────────────────────────
+# HASHING DE CONTRASEÑAS — bcrypt (Factor de costo 12 por defecto)
+# ─────────────────────────────────────────────
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+
+
+# ─────────────────────────────────────────────
 # DJANGO REST FRAMEWORK
 # ─────────────────────────────────────────────
 REST_FRAMEWORK = {

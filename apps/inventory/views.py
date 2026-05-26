@@ -5,7 +5,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.audit.models import AuditLog
 from apps.audit.services import create_audit_log
-from apps.users.permissions import EsGerente, EsGerenteOJefeBodega, EsGerenteOSoloLectura
+from apps.users.permissions import EsGerente, EsGerenteOJefeBodega, EsGerenteOSoloLectura, EsGerenteOJefeBodegaPeroSoloGerenteElimina
 from .models import Categoria, Producto, Bodega, StockBodega
 from .serializers import (
     CategoriaSerializer,
@@ -47,7 +47,7 @@ class CategoriaListCreateView(generics.ListCreateAPIView):
 class CategoriaDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
-    permission_classes = [IsAuthenticated, EsGerenteOJefeBodega]
+    permission_classes = [IsAuthenticated, EsGerenteOJefeBodegaPeroSoloGerenteElimina]
     http_method_names = ['get', 'patch', 'delete']
 
     def perform_update(self, serializer):
@@ -107,7 +107,7 @@ class ProductoListCreateView(generics.ListCreateAPIView):
 class ProductoDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Producto.objects.select_related('categoria').all()
     serializer_class = ProductoDetailSerializer
-    permission_classes = [IsAuthenticated, EsGerenteOJefeBodega]
+    permission_classes = [IsAuthenticated, EsGerenteOJefeBodegaPeroSoloGerenteElimina]
     http_method_names = ['get', 'patch', 'delete']
 
     def perform_update(self, serializer):
@@ -166,7 +166,7 @@ class BodegaListCreateView(generics.ListCreateAPIView):
 class BodegaDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Bodega.objects.select_related('administrador').all()
     serializer_class = BodegaDetailSerializer
-    permission_classes = [IsAuthenticated, EsGerente]
+    permission_classes = [IsAuthenticated, EsGerenteOJefeBodegaPeroSoloGerenteElimina]
     http_method_names = ['get', 'patch', 'delete']
 
     def perform_update(self, serializer):
@@ -230,7 +230,7 @@ class StockBodegaListCreateView(generics.ListCreateAPIView):
 )
 class StockBodegaDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StockBodegaSerializer
-    permission_classes = [IsAuthenticated, EsGerenteOJefeBodega]
+    permission_classes = [IsAuthenticated, EsGerenteOJefeBodegaPeroSoloGerenteElimina]
     http_method_names = ['get', 'patch', 'delete']
 
     def get_queryset(self):

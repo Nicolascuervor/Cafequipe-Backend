@@ -5,10 +5,6 @@ from django.db import models
 
 
 class UserManager(BaseUserManager):
-    """
-    Manager personalizado que usa email como único identificador
-    de autenticación en lugar de username.
-    """
 
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -22,6 +18,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('rol', 'GER')
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser debe tener is_staff=True.')
@@ -32,8 +29,6 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-
-    # ── Eliminamos username — email es la única fuente de verdad ──
     username = None
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -53,7 +48,6 @@ class User(AbstractUser):
     telefono = models.CharField(max_length=20, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # ── Autenticación por email ──
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
