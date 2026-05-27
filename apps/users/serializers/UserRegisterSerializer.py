@@ -26,7 +26,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'url', 'id', 'email', 'first_name', 'last_name',
-            'rol', 'telefono',
+            'rol', 'telefono', 'foto_perfil',
             'password', 'password_confirm',
         ]
         # Campos obligatorios en el request — DRF retorna 400 si faltan

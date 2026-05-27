@@ -14,6 +14,6 @@ class UserListSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'url', 'id', 'email', 'first_name', 'last_name',
-            'rol', 'rol_display', 'telefono', 'is_active',
+            'rol', 'rol_display', 'telefono', 'foto_perfil', 'is_active',
             'date_joined', 'updated_at',
         ]

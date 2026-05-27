@@ -2,6 +2,8 @@
 import uuid
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.core.validators import FileExtensionValidator
+from .validators import validate_file_size
 
 
 class UserManager(BaseUserManager):
@@ -46,6 +48,17 @@ class User(AbstractUser):
         default=Rol.OPERARIO
     )
     telefono = models.CharField(max_length=20, blank=True)
+    foto_perfil = models.ImageField(
+        'foto de perfil',
+        upload_to='users/profiles/',
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_file_size,
+        ],
+        help_text='Sube una imagen (JPG, PNG o WEBP). Máximo 5MB.'
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = 'email'

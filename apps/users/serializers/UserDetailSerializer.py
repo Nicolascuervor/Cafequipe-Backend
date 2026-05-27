@@ -19,7 +19,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'url', 'id', 'email', 'first_name', 'last_name',
-            'rol', 'rol_display', 'telefono',
+            'rol', 'rol_display', 'telefono', 'foto_perfil',
             'full_name', 'is_active',
             'date_joined', 'updated_at', 'last_login',
         ]
