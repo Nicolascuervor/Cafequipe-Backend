@@ -1,14 +1,14 @@
 # apps/inventory/serializers.py
 from rest_framework import serializers
-from .models import Categoria, Producto, Bodega, StockBodega
+from .models import SubCategoria, Producto, Bodega, StockBodega
 
 
 
-class CategoriaSerializer(serializers.ModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name='inventory:categoria-detail')
+class SubCategoriaSerializer(serializers.ModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name='inventory:subcategoria-detail')
 
     class Meta:
-        model = Categoria
+        model = SubCategoria
         fields = ['url', 'id', 'nombre', 'descripcion', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -16,14 +16,16 @@ class CategoriaSerializer(serializers.ModelSerializer):
 
 class ProductoListSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='inventory:producto-detail')
-    categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
+    sub_categoria_nombre = serializers.CharField(source='sub_categoria.nombre', read_only=True)
+    categoria_principal_display = serializers.CharField(source='get_categoria_principal_display', read_only=True)
     clasificacion_display = serializers.CharField(source='get_clasificacion_display', read_only=True)
 
     class Meta:
         model = Producto
         fields = [
-            'url', 'id', 'codigo_barras', 'nombre',
-            'categoria', 'categoria_nombre',
+            'url', 'id', 'nombre',
+            'sub_categoria', 'sub_categoria_nombre',
+            'categoria_principal', 'categoria_principal_display',
             'costo_unitario',
             'clasificacion', 'clasificacion_display',
             'inventario_seguridad', 'punto_reorden',
@@ -34,14 +36,16 @@ class ProductoListSerializer(serializers.ModelSerializer):
 
 class ProductoDetailSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='inventory:producto-detail')
-    categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
+    sub_categoria_nombre = serializers.CharField(source='sub_categoria.nombre', read_only=True)
+    categoria_principal_display = serializers.CharField(source='get_categoria_principal_display', read_only=True)
     clasificacion_display = serializers.CharField(source='get_clasificacion_display', read_only=True)
 
     class Meta:
         model = Producto
         fields = [
-            'url', 'id', 'codigo_barras', 'nombre',
-            'categoria', 'categoria_nombre',
+            'url', 'id', 'nombre',
+            'sub_categoria', 'sub_categoria_nombre',
+            'categoria_principal', 'categoria_principal_display',
             'costo_unitario',
             'clasificacion', 'clasificacion_display',
             'inventario_seguridad', 'punto_reorden',

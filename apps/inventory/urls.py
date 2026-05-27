@@ -5,9 +5,9 @@ from . import views
 app_name = 'inventory'
 
 urlpatterns = [
-    # Categorías
-    path('categorias/',            views.CategoriaListCreateView.as_view(), name='categoria-list'),
-    path('categorias/<uuid:pk>/',  views.CategoriaDetailView.as_view(),     name='categoria-detail'),
+    # Subcategorías
+    path('subcategorias/',            views.SubCategoriaListCreateView.as_view(), name='subcategoria-list'),
+    path('subcategorias/<uuid:pk>/',  views.SubCategoriaDetailView.as_view(),     name='subcategoria-detail'),
 
     # Productos
     path('productos/',             views.ProductoListCreateView.as_view(),  name='producto-list'),

@@ -6,9 +6,9 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from apps.audit.models import AuditLog
 from apps.audit.services import create_audit_log
 from apps.users.permissions import EsGerente, EsGerenteOJefeBodega, EsGerenteOSoloLectura, EsGerenteOJefeBodegaPeroSoloGerenteElimina
-from .models import Categoria, Producto, Bodega, StockBodega
+from .models import SubCategoria, Producto, Bodega, StockBodega
 from .serializers import (
-    CategoriaSerializer,
+    SubCategoriaSerializer,
     ProductoListSerializer,
     ProductoDetailSerializer,
     BodegaListSerializer,
@@ -21,9 +21,9 @@ from .serializers import (
     get=extend_schema(tags=['Inventario'], summary='Listar categorías'),
     post=extend_schema(tags=['Inventario'], summary='Crear categoría'),
 )
-class CategoriaListCreateView(generics.ListCreateAPIView):
-    queryset = Categoria.objects.all()
-    serializer_class = CategoriaSerializer
+class SubCategoriaListCreateView(generics.ListCreateAPIView):
+    queryset = SubCategoria.objects.all()
+    serializer_class = SubCategoriaSerializer
     permission_classes = [IsAuthenticated, EsGerenteOJefeBodega]
     search_fields = ['nombre']
     ordering_fields = ['nombre', 'created_at']
@@ -44,9 +44,9 @@ class CategoriaListCreateView(generics.ListCreateAPIView):
     patch=extend_schema(tags=['Inventario'], summary='Editar categoría'),
     delete=extend_schema(tags=['Inventario'], summary='Eliminar categoría'),
 )
-class CategoriaDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Categoria.objects.all()
-    serializer_class = CategoriaSerializer
+class SubCategoriaDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SubCategoria.objects.all()
+    serializer_class = SubCategoriaSerializer
     permission_classes = [IsAuthenticated, EsGerenteOJefeBodegaPeroSoloGerenteElimina]
     http_method_names = ['get', 'patch', 'delete']
 
@@ -77,10 +77,10 @@ class CategoriaDetailView(generics.RetrieveUpdateDestroyAPIView):
     post=extend_schema(tags=['Inventario'], summary='Crear producto'),
 )
 class ProductoListCreateView(generics.ListCreateAPIView):
-    queryset = Producto.objects.select_related('categoria').all()
+    queryset = Producto.objects.select_related('sub_categoria').all()
     permission_classes = [IsAuthenticated, EsGerenteOJefeBodega]
-    search_fields = ['nombre', 'codigo_barras']
-    filterset_fields = ['categoria', 'clasificacion']
+    search_fields = ['nombre']
+    filterset_fields = ['sub_categoria', 'categoria_principal', 'clasificacion']
     ordering_fields = ['nombre', 'costo_unitario', 'clasificacion', 'created_at']
 
     def get_serializer_class(self):
@@ -94,7 +94,7 @@ class ProductoListCreateView(generics.ListCreateAPIView):
             user=self.request.user,
             action=AuditLog.Action.PRODUCTO_CREATED,
             module=AuditLog.Module.INVENTORY,
-            description=f'Producto "{instance.nombre}" creado en categoría {instance.categoria.nombre}.',
+            description=f'Producto "{instance.nombre}" creado en subcategoría {instance.sub_categoria.nombre}.',
             request=self.request,
         )
 
@@ -105,7 +105,7 @@ class ProductoListCreateView(generics.ListCreateAPIView):
     delete=extend_schema(tags=['Inventario'], summary='Eliminar producto'),
 )
 class ProductoDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Producto.objects.select_related('categoria').all()
+    queryset = Producto.objects.select_related('sub_categoria').all()
     serializer_class = ProductoDetailSerializer
     permission_classes = [IsAuthenticated, EsGerenteOJefeBodegaPeroSoloGerenteElimina]
     http_method_names = ['get', 'patch', 'delete']

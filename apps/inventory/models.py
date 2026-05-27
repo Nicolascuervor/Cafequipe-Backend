@@ -16,13 +16,13 @@ class AuditModel(models.Model):
         abstract = True
 
 
-class Categoria(AuditModel):
+class SubCategoria(AuditModel):
     nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True)
 
     class Meta:
-        verbose_name = 'Categoría'
-        verbose_name_plural = 'Categorías'
+        verbose_name = 'Subcategoría'
+        verbose_name_plural = 'Subcategorías'
         ordering = ['nombre']
 
     def __str__(self):
@@ -37,18 +37,26 @@ class ClasificacionABC(models.TextChoices):
 
 
 
+class CategoriaPrincipal(models.TextChoices):
+    MATERIA_PRIMA = 'MP', 'Materia prima'
+    INSUMO        = 'IN', 'Insumo'
+    PRODUCTO      = 'PR', 'Producto'
+
+
 class Producto(AuditModel):
     # Identificadores únicos comerciales
-    codigo_barras = models.CharField(
-        max_length=50,
-        unique=True,
+    nombre = models.CharField(max_length=150)
+    
+    categoria_principal = models.CharField(
+        max_length=2,
+        choices=CategoriaPrincipal.choices,
         null=True,
         blank=True,
-        verbose_name='código de barras',
+        verbose_name='categoría principal',
     )
-    nombre = models.CharField(max_length=150)
-    categoria = models.ForeignKey(
-        Categoria,
+    
+    sub_categoria = models.ForeignKey(
+        SubCategoria,
         on_delete=models.PROTECT,
         related_name='productos',
     )
