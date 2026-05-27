@@ -1,0 +1,1 @@
+# apps/notifications/serializers.py

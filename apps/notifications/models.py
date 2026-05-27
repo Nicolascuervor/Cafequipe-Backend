@@ -1,0 +1,1 @@
+# apps/notifications/models.py
