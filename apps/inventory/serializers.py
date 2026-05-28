@@ -65,6 +65,7 @@ class BodegaListSerializer(serializers.ModelSerializer):
         fields = [
             'url', 'id', 'nombre', 'ubicacion',
             'administrador', 'administrador_nombre',
+            'catalogo_admitido',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -81,6 +82,7 @@ class BodegaDetailSerializer(serializers.ModelSerializer):
         fields = [
             'url', 'id', 'nombre', 'ubicacion',
             'administrador', 'administrador_nombre',
+            'catalogo_admitido',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -120,3 +122,21 @@ class StockBodegaSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['id', 'stock_proyectado', 'coordenada_fisica', 'requiere_reorden', 'updated_at']
+
+    def validate(self, data):
+        bodega = data.get('bodega') or (self.instance.bodega if self.instance else None)
+        producto = data.get('producto') or (self.instance.producto if self.instance else None)
+        
+        if bodega and producto:
+            cat_producto = producto.categoria_principal
+            if not cat_producto:
+                raise serializers.ValidationError({
+                    'producto': 'Este producto no tiene definida su categoría principal.'
+                })
+                
+            if cat_producto not in bodega.catalogo_admitido:
+                cat_nombre = producto.get_categoria_principal_display()
+                raise serializers.ValidationError(
+                    f'La bodega {bodega.nombre} no admite productos de tipo {cat_nombre}.'
+                )
+        return data
