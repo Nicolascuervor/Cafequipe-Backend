@@ -2,6 +2,7 @@
 import uuid
 
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -36,12 +37,10 @@ class ClasificacionABC(models.TextChoices):
     C = 'C', 'Clase C - Baja Prioridad'
 
 
-
 class CategoriaPrincipal(models.TextChoices):
     MATERIA_PRIMA = 'MP', 'Materia prima'
     INSUMO        = 'IN', 'Insumo'
     PRODUCTO      = 'PR', 'Producto'
-
 
 
 class NivelUbicacion(models.TextChoices):
@@ -119,6 +118,18 @@ class Bodega(AuditModel):
         related_name='bodegas_asignadas',
         limit_choices_to={'rol__in': ['JBD', 'GER']},
         help_text='Usuario responsable de la bodega (debe ser Jefe de Bodega o Gerente).',
+    )
+
+    def default_catalogo():
+        return [CategoriaPrincipal.MATERIA_PRIMA, CategoriaPrincipal.INSUMO, CategoriaPrincipal.PRODUCTO]
+
+    catalogo_admitido = ArrayField(
+        models.CharField(
+            max_length=2, 
+            choices=CategoriaPrincipal.choices
+        ),
+        default=default_catalogo,
+        verbose_name='catálogo admitido'
     )
 
     # Relación M2M a través del modelo intermedio de Stock
@@ -227,3 +238,18 @@ class StockBodega(models.Model):
     @property
     def requiere_reorden(self):
         return self.stock_proyectado <= self.producto.punto_reorden
+
+    def clean(self):
+        super().clean()
+        if self.producto_id and self.bodega_id:
+            cat_producto = self.producto.categoria_principal
+            if not cat_producto:
+                raise ValidationError({
+                    'producto': 'Este producto no tiene definida su categoría principal.'
+                })
+            
+            if cat_producto not in self.bodega.catalogo_admitido:
+                cat_nombre = self.producto.get_categoria_principal_display()
+                raise ValidationError(
+                    f'La bodega {self.bodega.nombre} no admite productos de tipo {cat_nombre}.'
+                )
