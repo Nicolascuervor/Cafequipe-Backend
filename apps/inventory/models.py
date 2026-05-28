@@ -43,6 +43,14 @@ class CategoriaPrincipal(models.TextChoices):
     PRODUCTO      = 'PR', 'Producto'
 
 
+
+class NivelUbicacion(models.TextChoices):
+    NIVEL_A = 'A', 'Nivel A'
+    NIVEL_B = 'B', 'Nivel B'
+    NIVEL_C = 'C', 'Nivel C'
+    NIVEL_D = 'D', 'Nivel D'
+
+
 class Producto(AuditModel):
     # Identificadores únicos comerciales
     nombre = models.CharField(max_length=150)
@@ -169,6 +177,27 @@ class StockBodega(models.Model):
         verbose_name='órdenes atrasadas',
     )
 
+    # Parámetros de ubicación física (basado en análisis ABC)
+    rack = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True, 
+        verbose_name='rack de almacenamiento'
+    )
+    nivel_ubicacion = models.CharField(
+        max_length=1,
+        choices=NivelUbicacion.choices,
+        blank=True,
+        null=True,
+        verbose_name='nivel (A, B, C, D)'
+    )
+    estiba = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name='número/identificador de estiba'
+    )
+
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -180,10 +209,21 @@ class StockBodega(models.Model):
         return f'{self.producto.nombre} en {self.bodega.nombre} ({self.stock_disponible} und)'
 
     @property
-    def posicion_inventario(self):
+    def coordenada_fisica(self):
+        partes = []
+        if self.rack:
+            partes.append(f'Rack {self.rack}')
+        if self.nivel_ubicacion:
+            partes.append(f'Nivel {self.nivel_ubicacion}')
+        if self.estiba:
+            partes.append(f'Estiba {self.estiba}')
+        
+        return " - ".join(partes) if partes else "Sin ubicación asignada"
 
+    @property
+    def stock_proyectado(self):
         return self.stock_disponible + self.pedidos_abiertos - self.ordenes_atrasadas
 
     @property
     def requiere_reorden(self):
-        return self.posicion_inventario <= self.producto.punto_reorden
+        return self.stock_proyectado <= self.producto.punto_reorden
