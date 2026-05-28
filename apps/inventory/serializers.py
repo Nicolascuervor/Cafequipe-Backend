@@ -98,7 +98,8 @@ class StockBodegaSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='inventory:stock-detail')
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     bodega_nombre = serializers.CharField(source='bodega.nombre', read_only=True)
-    posicion_inventario = serializers.IntegerField(read_only=True)
+    coordenada_fisica = serializers.CharField(read_only=True)
+    stock_proyectado = serializers.IntegerField(read_only=True)
     requiere_reorden = serializers.BooleanField(read_only=True)
 
     class Meta:
@@ -110,8 +111,12 @@ class StockBodegaSerializer(serializers.ModelSerializer):
             'stock_disponible',
             'pedidos_abiertos',
             'ordenes_atrasadas',
-            'posicion_inventario',
+            'rack',
+            'nivel_ubicacion',
+            'estiba',
+            'coordenada_fisica',
+            'stock_proyectado',
             'requiere_reorden',
             'updated_at',
         ]
-        read_only_fields = ['id', 'posicion_inventario', 'requiere_reorden', 'updated_at']
+        read_only_fields = ['id', 'stock_proyectado', 'coordenada_fisica', 'requiere_reorden', 'updated_at']
