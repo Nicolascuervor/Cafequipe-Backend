@@ -62,6 +62,11 @@ class AuditedLoginView(TokenObtainPairView):
                     description='Inicio de sesión exitoso.',
                     request=request,
                 )
+                
+                # Emitir señal estándar de login para que notificaciones (y otros) puedan escuchar
+                from django.contrib.auth.signals import user_logged_in
+                user_logged_in.send(sender=user.__class__, request=request, user=user)
+
             return response
         except Exception as e:
 

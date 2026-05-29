@@ -1,0 +1,15 @@
+Alerta de Seguridad: Nuevo Inicio de Sesión
+
+Hola, {{ user.first_name }}:
+
+Hemos detectado un nuevo inicio de sesión en tu cuenta de Cafequipe.
+
+Detalles del acceso:
+- Fecha y Hora: {% now "d \d\e F \d\e Y, H:i" %}
+- Dirección IP: {{ ip_address|default:"Desconocida" }}
+- Dispositivo/Navegador: {{ user_agent|default:"Desconocido" }}
+
+Si fuiste tú, puedes ignorar este mensaje de forma segura.
+Si no reconoces esta actividad, por favor contacta inmediatamente al administrador del sistema.
+
+Este es un correo automático. Por favor no respondas a este mensaje.
