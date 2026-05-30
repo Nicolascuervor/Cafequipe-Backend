@@ -120,7 +120,7 @@ class Bodega(AuditModel):
         help_text='Usuario responsable de la bodega (debe ser Jefe de Bodega o Gerente).',
     )
 
-    def default_catalogo():
+    def default_catalogo(self):
         return [CategoriaPrincipal.MATERIA_PRIMA, CategoriaPrincipal.INSUMO, CategoriaPrincipal.PRODUCTO]
 
     catalogo_admitido = ArrayField(
@@ -130,6 +130,12 @@ class Bodega(AuditModel):
         ),
         default=default_catalogo,
         verbose_name='catálogo admitido'
+    )
+
+    permite_stock_negativo = models.BooleanField(
+        default=False,
+        help_text='Permite descontar inventario en negativo. Útil para que la producción continúe y el inventario cuadre automáticamente al registrar el ingreso.',
+        verbose_name='permite stock negativo'
     )
 
     # Relación M2M a través del modelo intermedio de Stock
@@ -173,7 +179,7 @@ class StockBodega(models.Model):
         related_name='existencias_bodega',
     )
 
-    stock_disponible = models.PositiveIntegerField(
+    stock_disponible = models.IntegerField(
         default=0,
         verbose_name='stock disponible',
     )
@@ -186,6 +192,19 @@ class StockBodega(models.Model):
         default=0,
         help_text='Cantidad comprometida no entregada.',
         verbose_name='órdenes atrasadas',
+    )
+
+    # Control de Lotes y Fechas de Vencimiento (Fase 2)
+    codigo_lote = models.CharField(
+        max_length=100,
+        default='LOTE_INICIAL',
+        help_text='Código de lote para trazabilidad PEPS.',
+        verbose_name='código de lote'
+    )
+    fecha_vencimiento = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='fecha de vencimiento'
     )
 
     # Parámetros de ubicación física (basado en análisis ABC)
@@ -214,10 +233,10 @@ class StockBodega(models.Model):
     class Meta:
         verbose_name = 'Stock en Bodega'
         verbose_name_plural = 'Stocks en Bodegas'
-        unique_together = ('bodega', 'producto')
+        unique_together = ('bodega', 'producto', 'codigo_lote')
 
     def __str__(self):
-        return f'{self.producto.nombre} en {self.bodega.nombre} ({self.stock_disponible} und)'
+        return f'{self.producto.nombre} en {self.bodega.nombre} [Lote: {self.codigo_lote}] ({self.stock_disponible} und)'
 
     @property
     def coordenada_fisica(self):
