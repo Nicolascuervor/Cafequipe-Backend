@@ -110,6 +110,8 @@ class StockBodegaSerializer(serializers.ModelSerializer):
             'url', 'id',
             'bodega', 'bodega_nombre',
             'producto', 'producto_nombre',
+            'codigo_lote',
+            'fecha_vencimiento',
             'stock_disponible',
             'pedidos_abiertos',
             'ordenes_atrasadas',
