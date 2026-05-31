@@ -170,7 +170,7 @@ from .models import TicketInsumo, DetalleTicketInsumo
 
 class DetalleTicketInsumoSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
-    id = serializers.IntegerField(required=False)
+    id = serializers.UUIDField(required=False)
 
     class Meta:
         model = DetalleTicketInsumo
