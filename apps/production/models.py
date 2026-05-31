@@ -232,6 +232,12 @@ class TicketInsumo(AuditModel):
         limit_choices_to={'rol__in': ['JBD', 'GER']},
         related_name='tickets_despachados'
     )
+    razon_rechazo = models.TextField(
+        'Razón de Rechazo',
+        blank=True,
+        null=True,
+        help_text='Motivo por el cual el Jefe de Producción rechazó este ticket.'
+    )
 
     class Meta:
         verbose_name = 'Ticket de Insumos'

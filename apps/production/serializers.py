@@ -174,6 +174,6 @@ class TicketInsumoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TicketInsumo
-        fields = ['id', 'orden_produccion', 'orden_codigo', 'estado', 'fecha_solicitud', 'fecha_entrega', 'despachador', 'despachador_nombre', 'solicitante_id', 'solicitante_nombre', 'detalles']
+        fields = ['id', 'orden_produccion', 'orden_codigo', 'estado', 'fecha_solicitud', 'fecha_entrega', 'despachador', 'despachador_nombre', 'solicitante_id', 'solicitante_nombre', 'razon_rechazo', 'detalles']
         read_only_fields = ['orden_produccion', 'fecha_solicitud', 'fecha_entrega', 'despachador']
 
