@@ -169,9 +169,11 @@ class TicketInsumoSerializer(serializers.ModelSerializer):
     detalles = DetalleTicketInsumoSerializer(many=True)
     orden_codigo = serializers.ReadOnlyField(source='orden_produccion.codigo_lote')
     despachador_nombre = serializers.ReadOnlyField(source='despachador.get_full_name')
+    solicitante_id = serializers.ReadOnlyField(source='orden_produccion.responsable.id')
+    solicitante_nombre = serializers.ReadOnlyField(source='orden_produccion.responsable.get_full_name')
 
     class Meta:
         model = TicketInsumo
-        fields = ['id', 'orden_produccion', 'orden_codigo', 'estado', 'fecha_solicitud', 'fecha_entrega', 'despachador', 'despachador_nombre', 'detalles']
+        fields = ['id', 'orden_produccion', 'orden_codigo', 'estado', 'fecha_solicitud', 'fecha_entrega', 'despachador', 'despachador_nombre', 'solicitante_id', 'solicitante_nombre', 'detalles']
         read_only_fields = ['orden_produccion', 'fecha_solicitud', 'fecha_entrega', 'despachador']
 
