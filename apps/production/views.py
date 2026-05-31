@@ -58,9 +58,9 @@ class OrdenProduccionViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         nuevo_estado = serializer.validated_data.get('estado', instance.estado)
 
-        if nuevo_estado == EstadoOrden.EN_CURSO and instance.estado != EstadoOrden.EN_CURSO:
+        if nuevo_estado == EstadoOrden.EN_PROCESO and instance.estado != EstadoOrden.EN_PROCESO:
             if hasattr(instance, 'ticket_insumos') and instance.ticket_insumos.estado != EstadoTicket.ENTREGADO:
-                raise serializers.ValidationError({"estado": "No se puede iniciar la producción (En Curso) sin que el Ticket de Insumos haya sido aprobado y entregado."})
+                raise serializers.ValidationError({"estado": "No se puede iniciar la producción (En Proceso) sin que el Ticket de Insumos haya sido aprobado y entregado."})
 
         if nuevo_estado == EstadoOrden.COMPLETADA and instance.estado != EstadoOrden.COMPLETADA:
             if hasattr(instance, 'ticket_insumos') and instance.ticket_insumos.estado != EstadoTicket.ENTREGADO:
