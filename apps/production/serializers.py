@@ -175,6 +175,7 @@ class DetalleTicketInsumoSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetalleTicketInsumo
         fields = ['id', 'producto', 'producto_nombre', 'cantidad_solicitada', 'cantidad_entregada', 'lote_origen']
+        read_only_fields = ['producto', 'cantidad_entregada', 'lote_origen']
 
 class TicketInsumoSerializer(serializers.ModelSerializer):
     detalles = DetalleTicketInsumoSerializer(many=True)
