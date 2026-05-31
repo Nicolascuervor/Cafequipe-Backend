@@ -19,6 +19,7 @@ class ProductoListSerializer(serializers.ModelSerializer):
     sub_categoria_nombre = serializers.CharField(source='sub_categoria.nombre', read_only=True)
     categoria_principal_display = serializers.CharField(source='get_categoria_principal_display', read_only=True)
     clasificacion_display = serializers.CharField(source='get_clasificacion_display', read_only=True)
+    unidad_medida_display = serializers.CharField(source='get_unidad_medida_display', read_only=True)
 
     class Meta:
         model = Producto
@@ -26,6 +27,7 @@ class ProductoListSerializer(serializers.ModelSerializer):
             'url', 'id', 'nombre',
             'sub_categoria', 'sub_categoria_nombre',
             'categoria_principal', 'categoria_principal_display',
+            'unidad_medida', 'unidad_medida_display',
             'costo_unitario',
             'clasificacion', 'clasificacion_display',
             'inventario_seguridad', 'punto_reorden',
@@ -39,6 +41,7 @@ class ProductoDetailSerializer(serializers.ModelSerializer):
     sub_categoria_nombre = serializers.CharField(source='sub_categoria.nombre', read_only=True)
     categoria_principal_display = serializers.CharField(source='get_categoria_principal_display', read_only=True)
     clasificacion_display = serializers.CharField(source='get_clasificacion_display', read_only=True)
+    unidad_medida_display = serializers.CharField(source='get_unidad_medida_display', read_only=True)
 
     class Meta:
         model = Producto
@@ -46,6 +49,7 @@ class ProductoDetailSerializer(serializers.ModelSerializer):
             'url', 'id', 'nombre',
             'sub_categoria', 'sub_categoria_nombre',
             'categoria_principal', 'categoria_principal_display',
+            'unidad_medida', 'unidad_medida_display',
             'costo_unitario',
             'clasificacion', 'clasificacion_display',
             'inventario_seguridad', 'punto_reorden',
@@ -99,6 +103,7 @@ class BodegaDetailSerializer(serializers.ModelSerializer):
 class StockBodegaSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='inventory:stock-detail')
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    producto_unidad_medida_display = serializers.CharField(source='producto.get_unidad_medida_display', read_only=True)
     bodega_nombre = serializers.CharField(source='bodega.nombre', read_only=True)
     coordenada_fisica = serializers.CharField(read_only=True)
     stock_proyectado = serializers.IntegerField(read_only=True)
@@ -109,7 +114,7 @@ class StockBodegaSerializer(serializers.ModelSerializer):
         fields = [
             'url', 'id',
             'bodega', 'bodega_nombre',
-            'producto', 'producto_nombre',
+            'producto', 'producto_nombre', 'producto_unidad_medida_display',
             'codigo_lote',
             'fecha_vencimiento',
             'stock_disponible',

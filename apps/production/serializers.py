@@ -7,20 +7,22 @@ from apps.inventory.models import Producto
 
 class IngredienteRecetaSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.ReadOnlyField(source='producto_insumo.nombre')
+    producto_unidad_medida_display = serializers.ReadOnlyField(source='producto_insumo.get_unidad_medida_display')
     categoria = serializers.ReadOnlyField(source='producto_insumo.categoria_principal')
 
     class Meta:
         model = IngredienteReceta
-        fields = ['id', 'producto_insumo', 'producto_nombre', 'categoria', 'cantidad_necesaria']
+        fields = ['id', 'producto_insumo', 'producto_nombre', 'producto_unidad_medida_display', 'categoria', 'cantidad_necesaria']
 
 class RecetaSerializer(serializers.ModelSerializer):
     ingredientes = IngredienteRecetaSerializer(many=True)
     producto_nombre = serializers.ReadOnlyField(source='producto_terminado.nombre')
+    producto_unidad_medida_display = serializers.ReadOnlyField(source='producto_terminado.get_unidad_medida_display')
 
     class Meta:
         model = Receta
         fields = [
-            'id', 'producto_terminado', 'producto_nombre', 
+            'id', 'producto_terminado', 'producto_nombre', 'producto_unidad_medida_display', 
             'rendimiento_base', 'instrucciones', 'activa', 
             'ingredientes', 'created_at', 'updated_at'
         ]
