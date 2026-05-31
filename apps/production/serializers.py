@@ -159,11 +159,11 @@ from .models import TicketInsumo, DetalleTicketInsumo
 
 class DetalleTicketInsumoSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
+    id = serializers.IntegerField(required=False)
 
     class Meta:
         model = DetalleTicketInsumo
         fields = ['id', 'producto', 'producto_nombre', 'cantidad_solicitada', 'cantidad_entregada', 'lote_origen']
-        read_only_fields = ['cantidad_solicitada']
 
 class TicketInsumoSerializer(serializers.ModelSerializer):
     detalles = DetalleTicketInsumoSerializer(many=True)
@@ -176,4 +176,27 @@ class TicketInsumoSerializer(serializers.ModelSerializer):
         model = TicketInsumo
         fields = ['id', 'orden_produccion', 'orden_codigo', 'estado', 'fecha_solicitud', 'fecha_entrega', 'despachador', 'despachador_nombre', 'solicitante_id', 'solicitante_nombre', 'razon_rechazo', 'detalles']
         read_only_fields = ['orden_produccion', 'fecha_solicitud', 'fecha_entrega', 'despachador']
+
+    def update(self, instance, validated_data):
+        detalles_data = validated_data.pop('detalles', [])
+        
+        user = self.context['request'].user
+        if user.rol == 'OPR' and instance.estado == 'REC':
+            instance.estado = 'SOL'
+            instance.razon_rechazo = None
+            
+        instance = super().update(instance, validated_data)
+        
+        for detalle_data in detalles_data:
+            detalle_id = detalle_data.get('id')
+            if detalle_id:
+                try:
+                    detalle = instance.detalles.get(id=detalle_id)
+                    if 'cantidad_solicitada' in detalle_data:
+                        detalle.cantidad_solicitada = detalle_data['cantidad_solicitada']
+                        detalle.save()
+                except DetalleTicketInsumo.DoesNotExist:
+                    pass
+                    
+        return instance
 
