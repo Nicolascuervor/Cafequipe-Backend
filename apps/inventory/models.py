@@ -51,6 +51,16 @@ class NivelUbicacion(models.TextChoices):
     NIVEL_D = 'D', 'Nivel D'
 
 
+class UnidadMedida(models.TextChoices):
+    KILOGRAMO = 'KG', 'Kilogramos (kg)'
+    GRAMO = 'G', 'Gramos (g)'
+    LITRO = 'L', 'Litros (L)'
+    MILILITRO = 'ML', 'Mililitros (ml)'
+    UNIDAD = 'UND', 'Unidades (und)'
+    CAJA = 'CAJ', 'Cajas'
+    PAQUETE = 'PAQ', 'Paquetes'
+
+
 class Producto(AuditModel):
     # Identificadores únicos comerciales
     nombre = models.CharField(max_length=150)
@@ -61,6 +71,13 @@ class Producto(AuditModel):
         null=True,
         blank=True,
         verbose_name='categoría principal',
+    )
+    
+    unidad_medida = models.CharField(
+        max_length=3,
+        choices=UnidadMedida.choices,
+        default=UnidadMedida.UNIDAD,
+        verbose_name='unidad de medida',
     )
     
     sub_categoria = models.ForeignKey(
