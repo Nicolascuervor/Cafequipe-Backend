@@ -1,7 +1,12 @@
 # apps/inventory/views.py
 from rest_framework import generics
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from django.db.models import F
+from django.utils import timezone
+from datetime import timedelta
 
 from apps.audit.models import AuditLog
 from apps.audit.services import create_audit_log
@@ -258,3 +263,41 @@ class StockBodegaDetailView(generics.RetrieveUpdateDestroyAPIView):
             description=desc,
             request=self.request,
         )
+
+
+@extend_schema(
+    tags=['Inventario'],
+    summary='Alertas inteligentes de stock',
+    description='Devuelve tres listas optimizadas: stock crítico (por debajo del 60% del mínimo), '
+                'stock bajo (cerca del punto de reorden) y lotes por vencer en 30 días.'
+)
+class AlertasStockView(APIView):
+    permission_classes = [IsAuthenticated, EsGerenteOJefeBodega]
+
+    def get(self, request, *args, **kwargs):
+        hoy = timezone.now().date()
+        limite_vencimiento = hoy + timedelta(days=30)
+
+        # 1. Stock crítico: disponible < (inventario_seguridad * 0.6)
+        stock_critico = StockBodega.objects.select_related('bodega', 'producto').filter(
+            stock_disponible__lt=F('producto__inventario_seguridad') * 0.6
+        )
+
+        # 2. Por vencer: fecha_vencimiento <= 30 días y hay stock
+        por_vencer = StockBodega.objects.select_related('bodega', 'producto').filter(
+            fecha_vencimiento__lte=limite_vencimiento,
+            fecha_vencimiento__gte=hoy,
+            stock_disponible__gt=0
+        )
+
+        # 3. Stock bajo: (inventario_seguridad * 0.6) <= disponible <= punto_reorden
+        stock_bajo = StockBodega.objects.select_related('bodega', 'producto').filter(
+            stock_disponible__lte=F('producto__punto_reorden'),
+            stock_disponible__gte=F('producto__inventario_seguridad') * 0.6
+        )
+
+        return Response({
+            'stock_critico': StockBodegaSerializer(stock_critico, many=True).data,
+            'por_vencer': StockBodegaSerializer(por_vencer, many=True).data,
+            'stock_bajo': StockBodegaSerializer(stock_bajo, many=True).data
+        })

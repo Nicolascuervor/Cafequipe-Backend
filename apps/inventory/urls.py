@@ -19,5 +19,6 @@ urlpatterns = [
 
     # Stock por Bodega
     path('stock/',                 views.StockBodegaListCreateView.as_view(), name='stock-list'),
-    path('stock/<uuid:pk>/',       views.StockBodegaDetailView.as_view(),    name='stock-detail'),
+    path('stock/alertas/',         views.AlertasStockView.as_view(),          name='stock-alertas'),
+    path('stock/<uuid:pk>/',       views.StockBodegaDetailView.as_view(),     name='stock-detail'),
 ]
