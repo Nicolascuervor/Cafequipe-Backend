@@ -11,6 +11,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import ProtectedError
+from apps.audit.models import AuditLog
+from apps.audit.services import create_audit_log
 from apps.inventory.models import Bodega
 from .models import TicketInsumo, DetalleTicketInsumo, EstadoTicket
 from .serializers import TicketInsumoSerializer
@@ -29,6 +32,20 @@ class RecetaViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save()
+
+    def perform_destroy(self, instance):
+        nombre = instance.producto_terminado.nombre if hasattr(instance, 'producto_terminado') else str(instance.id)
+        try:
+            instance.delete()
+            create_audit_log(
+                user=self.request.user,
+                action=AuditLog.Action.RECETA_DELETED,
+                module=AuditLog.Module.PRODUCTION,
+                description=f'Receta para {nombre} eliminada.',
+                request=self.request,
+            )
+        except ProtectedError:
+            raise serializers.ValidationError({"detail": "No se puede eliminar esta receta porque está siendo utilizada en órdenes de producción."})
 
 class OrdenProduccionViewSet(viewsets.ModelViewSet):
 
@@ -103,16 +120,64 @@ class OrdenProduccionViewSet(viewsets.ModelViewSet):
 
         serializer.save()
 
+    def perform_destroy(self, instance):
+        if instance.estado in [EstadoOrden.EN_PROCESO, EstadoOrden.COMPLETADA]:
+            raise serializers.ValidationError({"detail": "No se puede eliminar una orden que ya está en proceso o completada. Cancélela en su lugar."})
+        
+        lote = instance.codigo_lote
+        try:
+            instance.delete()
+            create_audit_log(
+                user=self.request.user,
+                action=AuditLog.Action.ORDEN_DELETED,
+                module=AuditLog.Module.PRODUCTION,
+                description=f'Orden de producción {lote} eliminada.',
+                request=self.request,
+            )
+        except ProtectedError:
+            raise serializers.ValidationError({"detail": "No se puede eliminar esta orden de producción por restricciones de integridad."})
+
 class ParametroCalidadViewSet(viewsets.ModelViewSet):
     queryset = ParametroCalidad.objects.all()
     serializer_class = ParametroCalidadSerializer
     permission_classes = [IsJefeProduccionOrGerente]
     filterset_fields = ['activo']
 
+    def perform_destroy(self, instance):
+        nombre = instance.nombre
+        try:
+            instance.delete()
+            create_audit_log(
+                user=self.request.user,
+                action=AuditLog.Action.PARAMETRO_CALIDAD_DELETED,
+                module=AuditLog.Module.PRODUCTION,
+                description=f'Parámetro de calidad {nombre} eliminado.',
+                request=self.request,
+            )
+        except ProtectedError:
+            raise serializers.ValidationError({"detail": "No se puede eliminar este parámetro porque está en uso en controles de calidad."})
+
 class ControlCalidadLoteViewSet(viewsets.ModelViewSet):
     queryset = ControlCalidadLote.objects.all().select_related('orden_produccion').prefetch_related('valores__parametro')
     serializer_class = ControlCalidadLoteSerializer
     permission_classes = [IsJefeProduccionOrGerente]
+
+    def perform_destroy(self, instance):
+        lote = instance.orden_produccion.codigo_lote
+        if instance.orden_produccion.estado == EstadoOrden.COMPLETADA:
+            raise serializers.ValidationError({"detail": "No se puede eliminar el control de calidad de una orden completada."})
+            
+        try:
+            instance.delete()
+            create_audit_log(
+                user=self.request.user,
+                action=AuditLog.Action.CONTROL_CALIDAD_DELETED,
+                module=AuditLog.Module.PRODUCTION,
+                description=f'Control de calidad para la orden {lote} eliminado.',
+                request=self.request,
+            )
+        except ProtectedError:
+            raise serializers.ValidationError({"detail": "No se puede eliminar este control de calidad."})
 
 
 class TicketInsumoViewSet(viewsets.ModelViewSet):
@@ -194,4 +259,21 @@ class TicketInsumoViewSet(viewsets.ModelViewSet):
             
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def perform_destroy(self, instance):
+        if instance.estado == EstadoTicket.ENTREGADO:
+            raise serializers.ValidationError({"detail": "No se puede eliminar un ticket que ya ha sido entregado. Realice un ajuste de inventario en su lugar."})
+            
+        lote = instance.orden_produccion.codigo_lote if hasattr(instance, 'orden_produccion') else str(instance.id)
+        try:
+            instance.delete()
+            create_audit_log(
+                user=self.request.user,
+                action=AuditLog.Action.TICKET_DELETED,
+                module=AuditLog.Module.PRODUCTION,
+                description=f'Ticket de insumos para la orden {lote} eliminado.',
+                request=self.request,
+            )
+        except ProtectedError:
+            raise serializers.ValidationError({"detail": "No se puede eliminar este ticket de insumos."})
 
