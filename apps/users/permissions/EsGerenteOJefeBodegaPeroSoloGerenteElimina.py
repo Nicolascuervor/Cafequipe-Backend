@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 class EsGerenteOJefeBodegaPeroSoloGerenteElimina(BasePermission):
-    message = 'Solo el Gerente puede eliminar este recurso. Jefes de Bodega solo pueden consultar o modificar. Operarios solo lectura.'
+    message = 'Solo el Gerente puede eliminar este recurso. Jefes de Bodega o Producción solo pueden consultar o modificar. Operarios solo lectura.'
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -13,4 +13,4 @@ class EsGerenteOJefeBodegaPeroSoloGerenteElimina(BasePermission):
         if request.user.rol == 'OPR' and request.method in SAFE_METHODS:
             return True
 
-        return request.user.rol in ['GER', 'JBD']
+        return request.user.rol in ['GER', 'JBD', 'JPR']
