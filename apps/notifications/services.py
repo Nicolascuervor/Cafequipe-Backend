@@ -61,9 +61,10 @@ def send_async_email(user, subject, template_name, context, notification_type):
 
 def send_registration_email(user):
     subject = '¡Bienvenido a Cafequipe!'
+    frontend_url = settings.CORS_ALLOWED_ORIGINS[0] if hasattr(settings, 'CORS_ALLOWED_ORIGINS') else 'http://localhost:5173'
     context = {
         'user': user,
-        'frontend_url': settings.CORS_ALLOWED_ORIGINS[0] if hasattr(settings, 'CORS_ALLOWED_ORIGINS') else 'http://localhost:5173'
+        'login_url': f"{frontend_url}/login"
     }
     send_async_email(
         user=user,
@@ -75,10 +76,12 @@ def send_registration_email(user):
 
 def send_login_alert_email(user, ip_address, user_agent):
     subject = 'Alerta de Inicio de Sesión - Cafequipe'
+    frontend_url = settings.CORS_ALLOWED_ORIGINS[0] if hasattr(settings, 'CORS_ALLOWED_ORIGINS') else 'http://localhost:5173'
     context = {
         'user': user,
         'ip_address': ip_address,
-        'user_agent': user_agent
+        'device_info': user_agent,
+        'reset_url': f"{frontend_url}/forgot-password"
     }
     send_async_email(
         user=user,
@@ -86,4 +89,18 @@ def send_login_alert_email(user, ip_address, user_agent):
         template_name='login_alert',
         context=context,
         notification_type=NotificationLog.NotificationType.LOGIN_ALERT
+    )
+
+def send_password_reset_email(user, reset_link):
+    subject = 'Recuperación de contraseña - Cafequipe'
+    context = {
+        'user': user,
+        'reset_url': reset_link
+    }
+    send_async_email(
+        user=user,
+        subject=subject,
+        template_name='password_reset',
+        context=context,
+        notification_type=NotificationLog.NotificationType.PASSWORD_RESET
     )

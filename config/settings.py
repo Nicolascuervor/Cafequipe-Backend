@@ -121,6 +121,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # ─────────────────────────────────────────────
+# RECUPERACIÓN DE CONTRASEÑA
+# ─────────────────────────────────────────────
+PASSWORD_RESET_TIMEOUT = 3600  # 1 hora en segundos
+
+# ─────────────────────────────────────────────
 # HASHING DE CONTRASEÑAS — bcrypt (Factor de costo 12 por defecto)
 # ─────────────────────────────────────────────
 PASSWORD_HASHERS = [

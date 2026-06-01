@@ -2,11 +2,17 @@
 
 from django.contrib.auth import get_user_model
 from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenBlacklistView
 from drf_spectacular.utils import extend_schema, extend_schema_view
+
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.conf import settings
+from apps.notifications.services import send_password_reset_email
 
 from apps.audit.models import AuditLog
 from apps.audit.services import create_audit_log
@@ -16,6 +22,8 @@ from .serializers import (
     UserListSerializer,
     UserDetailSerializer,
     ChangePasswordSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
 )
 
 from django.core.cache import cache
@@ -226,4 +234,94 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
             description=f'Usuario {instance.email} desactivado por {self.request.user.email}.',
             request=self.request,
         )
+
+
+@extend_schema(
+    tags=['Auth'],
+    summary='Solicitar recuperación de contraseña',
+    description='Envía un correo con un enlace para restablecer la contraseña si el email existe.',
+)
+class PasswordResetRequestView(generics.GenericAPIView):
+    serializer_class = PasswordResetRequestSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        
+        user = User.objects.filter(email=email).first()
+        if user:
+            # Generar token y uidb64
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            
+            # Construir enlace al frontend
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173/reset-password')
+            reset_link = f"{frontend_url}?uidb64={uidb64}&token={token}"
+            
+            # Enviar correo asíncrono
+            send_password_reset_email(user, reset_link)
+
+            # Auditar la solicitud
+            create_audit_log(
+                user=user,
+                action=AuditLog.Action.PASSWORD_RESET_REQUESTED,
+                module=AuditLog.Module.AUTH,
+                description='Solicitud de recuperación de contraseña enviada.',
+                request=request,
+            )
+
+        return Response(
+            {"detail": "Revisa tu bandeja de entrada o carpeta de spam."},
+            status=status.HTTP_200_OK
+        )
+
+
+@extend_schema(
+    tags=['Auth'],
+    summary='Confirmar nueva contraseña',
+    description='Recibe el uidb64, el token y la nueva contraseña para actualizarla. Retorna 400 si el token es inválido o expiró.',
+)
+class PasswordResetConfirmView(generics.GenericAPIView):
+    serializer_class = PasswordResetConfirmSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        uidb64 = serializer.validated_data['uidb64']
+        token = serializer.validated_data['token']
+        new_password = serializer.validated_data['new_password']
+
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            user.set_password(new_password)
+            user.save(update_fields=['password'])
+            
+            # Auditar el reseteo
+            create_audit_log(
+                user=user,
+                action=AuditLog.Action.PASSWORD_CHANGED,
+                module=AuditLog.Module.AUTH,
+                description='Contraseña restablecida exitosamente mediante token de recuperación.',
+                request=request,
+            )
+
+            return Response(
+                {"detail": "La contraseña ha sido restablecida correctamente."},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {"detail": "El enlace de recuperación no es válido o ha expirado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 

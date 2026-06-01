@@ -4,6 +4,8 @@ from .UserListSerializer import UserListSerializer
 from .UserDetailSerializer import UserDetailSerializer
 from .ChangePasswordSerializer import ChangePasswordSerializer
 from .CustomTokenObtainPairSerializer import CustomTokenObtainPairSerializer
+from .PasswordResetRequestSerializer import PasswordResetRequestSerializer
+from .PasswordResetConfirmSerializer import PasswordResetConfirmSerializer
 
 __all__ = [
     'UserRegisterSerializer',
@@ -11,4 +13,6 @@ __all__ = [
     'UserDetailSerializer',
     'ChangePasswordSerializer',
     'CustomTokenObtainPairSerializer',
+    'PasswordResetRequestSerializer',
+    'PasswordResetConfirmSerializer',
 ]

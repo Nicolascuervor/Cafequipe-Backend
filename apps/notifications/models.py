@@ -7,6 +7,7 @@ class NotificationLog(models.Model):
     class NotificationType(models.TextChoices):
         REGISTRATION = 'REGISTRATION', 'Registro de Usuario'
         LOGIN_ALERT = 'LOGIN_ALERT', 'Alerta de Inicio de Sesión'
+        PASSWORD_RESET = 'PASSWORD_RESET', 'Recuperación de Contraseña'
         OTHER = 'OTHER', 'Otro'
 
     class Status(models.TextChoices):

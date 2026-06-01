@@ -1,9 +1,14 @@
-¡Bienvenido/a a Cafequipe, {{ user.first_name }}!
+Bienvenido a Cafequipe
 
-Tu cuenta ha sido creada exitosamente en nuestro sistema de gestión. Ahora tienes acceso a la plataforma con el rol de {{ user.get_rol_display }}.
+Hola {{ user.first_name }},
 
-Para ingresar al sistema, utiliza tu correo electrónico: {{ user.email }}
+Nos alegra darte la bienvenida a Syncra WMS, la plataforma oficial de gestión inteligente de inventario, recepción y despacho de Cafequipe.
 
-Ingresa al sistema aquí: {{ frontend_url }}
+Tu cuenta ha sido configurada con éxito. A partir de ahora podrás acceder a tu panel de control para colaborar con el resto del equipo en las operaciones diarias.
 
-Este es un correo automático. Por favor no respondas a este mensaje.
+Iniciar Sesión: {{ login_url }}
+
+Si tienes alguna duda sobre el uso de la plataforma, los permisos de tu cuenta o cómo navegar por el sistema, no dudes en consultar con tu jefe directo o el equipo administrativo.
+
+Este es un mensaje automático generado por el sistema.
+© Cafequipe — Syncra WMS
