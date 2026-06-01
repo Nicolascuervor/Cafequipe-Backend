@@ -296,8 +296,19 @@ class AlertasStockView(APIView):
             stock_disponible__gte=F('producto__inventario_seguridad') * 0.6
         )
 
+        def map_alerta(item):
+            return {
+                "id": item.id,
+                "producto_nombre": item.producto.nombre,
+                "bodega_nombre": item.bodega.nombre,
+                "stock_disponible": item.stock_disponible,
+                "unidad_medida_display": item.producto.get_unidad_medida_display(),
+                "coordenada_fisica": item.coordenada_fisica,
+                "fecha_vencimiento": item.fecha_vencimiento
+            }
+
         return Response({
-            'stock_critico': StockBodegaSerializer(stock_critico, many=True).data,
-            'por_vencer': StockBodegaSerializer(por_vencer, many=True).data,
-            'stock_bajo': StockBodegaSerializer(stock_bajo, many=True).data
+            'stock_critico': [map_alerta(i) for i in stock_critico],
+            'por_vencer': [map_alerta(i) for i in por_vencer],
+            'stock_bajo': [map_alerta(i) for i in stock_bajo]
         })
