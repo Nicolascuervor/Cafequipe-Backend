@@ -203,7 +203,7 @@ class BodegaDetailView(generics.RetrieveUpdateDestroyAPIView):
 class StockBodegaListCreateView(generics.ListCreateAPIView):
     serializer_class = StockBodegaSerializer
     permission_classes = [IsAuthenticated, EsGerenteOJefeBodega]
-    filterset_fields = ['bodega', 'producto']
+    filterset_fields = ['bodega', 'producto', 'producto__categoria_principal', 'producto__clasificacion']
     search_fields = ['producto__nombre']
     ordering_fields = ['stock_disponible', 'updated_at']
 

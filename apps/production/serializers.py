@@ -96,6 +96,17 @@ class OrdenProduccionSerializer(serializers.ModelSerializer):
         if 'fecha_vencimiento' in mutable_data and (mutable_data['fecha_vencimiento'] is None or not str(mutable_data['fecha_vencimiento']).strip()):
             mutable_data.pop('fecha_vencimiento')
             
+        # Parseo seguro: Reemplazar comas por puntos (ej: "3,00" -> "3.00")
+        if 'cantidad_obtenida' in mutable_data and isinstance(mutable_data['cantidad_obtenida'], str):
+            mutable_data['cantidad_obtenida'] = mutable_data['cantidad_obtenida'].replace(',', '.')
+
+        # Parseo seguro: Si el frontend envía el nombre de la bodega ("Bodega Central") en lugar del ID (1)
+        if 'bodega_destino' in mutable_data and isinstance(mutable_data['bodega_destino'], str) and not mutable_data['bodega_destino'].isdigit():
+            from apps.inventory.models import Bodega
+            bodega = Bodega.objects.filter(nombre__iexact=mutable_data['bodega_destino'].strip()).first()
+            if bodega:
+                mutable_data['bodega_destino'] = bodega.id
+            
         return super().to_internal_value(mutable_data)
 
 class ParametroCalidadSerializer(serializers.ModelSerializer):
@@ -159,19 +170,45 @@ from .models import TicketInsumo, DetalleTicketInsumo
 
 class DetalleTicketInsumoSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
+    id = serializers.UUIDField(required=False)
 
     class Meta:
         model = DetalleTicketInsumo
         fields = ['id', 'producto', 'producto_nombre', 'cantidad_solicitada', 'cantidad_entregada', 'lote_origen']
-        read_only_fields = ['cantidad_solicitada']
+        read_only_fields = ['producto', 'cantidad_entregada', 'lote_origen']
 
 class TicketInsumoSerializer(serializers.ModelSerializer):
     detalles = DetalleTicketInsumoSerializer(many=True)
     orden_codigo = serializers.ReadOnlyField(source='orden_produccion.codigo_lote')
     despachador_nombre = serializers.ReadOnlyField(source='despachador.get_full_name')
+    solicitante_id = serializers.ReadOnlyField(source='orden_produccion.responsable.id')
+    solicitante_nombre = serializers.ReadOnlyField(source='orden_produccion.responsable.get_full_name')
 
     class Meta:
         model = TicketInsumo
-        fields = ['id', 'orden_produccion', 'orden_codigo', 'estado', 'fecha_solicitud', 'fecha_entrega', 'despachador', 'despachador_nombre', 'detalles']
+        fields = ['id', 'orden_produccion', 'orden_codigo', 'estado', 'fecha_solicitud', 'fecha_entrega', 'despachador', 'despachador_nombre', 'solicitante_id', 'solicitante_nombre', 'razon_rechazo', 'detalles']
         read_only_fields = ['orden_produccion', 'fecha_solicitud', 'fecha_entrega', 'despachador']
+
+    def update(self, instance, validated_data):
+        detalles_data = validated_data.pop('detalles', [])
+        
+        user = self.context['request'].user
+        if user.rol == 'OPR' and instance.estado == 'REC':
+            instance.estado = 'SOL'
+            instance.razon_rechazo = None
+            
+        instance = super().update(instance, validated_data)
+        
+        for detalle_data in detalles_data:
+            detalle_id = detalle_data.get('id')
+            if detalle_id:
+                try:
+                    detalle = instance.detalles.get(id=detalle_id)
+                    if 'cantidad_solicitada' in detalle_data:
+                        detalle.cantidad_solicitada = detalle_data['cantidad_solicitada']
+                        detalle.save()
+                except DetalleTicketInsumo.DoesNotExist:
+                    pass
+                    
+        return instance
 

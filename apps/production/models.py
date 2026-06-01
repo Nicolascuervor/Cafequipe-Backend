@@ -8,7 +8,6 @@ import random
 import string
 
 class Receta(AuditModel):
-    # La receta siempre está amarrada a un Producto Terminado (PR)
     producto_terminado = models.OneToOneField(
         Producto,
         on_delete=models.CASCADE,
@@ -231,6 +230,12 @@ class TicketInsumo(AuditModel):
         blank=True,
         limit_choices_to={'rol__in': ['JBD', 'GER']},
         related_name='tickets_despachados'
+    )
+    razon_rechazo = models.TextField(
+        'Razón de Rechazo',
+        blank=True,
+        null=True,
+        help_text='Motivo por el cual el Jefe de Producción rechazó este ticket.'
     )
 
     class Meta:

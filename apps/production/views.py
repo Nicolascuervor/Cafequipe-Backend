@@ -5,7 +5,7 @@ from .serializers import (
     RecetaSerializer, OrdenProduccionSerializer,
     ParametroCalidadSerializer, ControlCalidadLoteSerializer
 )
-from .permissions import IsJefeProduccionOrGerente
+from .permissions import IsJefeProduccionOrGerente, OperarioPuedeCrearYEditarOrdenes
 
 class RecetaViewSet(viewsets.ModelViewSet):
 
@@ -29,7 +29,7 @@ class OrdenProduccionViewSet(viewsets.ModelViewSet):
     """
     queryset = OrdenProduccion.objects.all().select_related('receta__producto_terminado', 'responsable')
     serializer_class = OrdenProduccionSerializer
-    permission_classes = [IsJefeProduccionOrGerente]
+    permission_classes = [OperarioPuedeCrearYEditarOrdenes]
     filterset_fields = ['estado', 'receta__producto_terminado', 'codigo_lote']
     search_fields = ['codigo_lote']
     ordering_fields = ['created_at', 'fecha_vencimiento']
@@ -57,6 +57,10 @@ class OrdenProduccionViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         instance = self.get_object()
         nuevo_estado = serializer.validated_data.get('estado', instance.estado)
+
+        if nuevo_estado == EstadoOrden.EN_PROCESO and instance.estado != EstadoOrden.EN_PROCESO:
+            if hasattr(instance, 'ticket_insumos') and instance.ticket_insumos.estado != EstadoTicket.ENTREGADO:
+                raise serializers.ValidationError({"estado": "No se puede iniciar la producción (En Proceso) sin que el Ticket de Insumos haya sido aprobado y entregado."})
 
         if nuevo_estado == EstadoOrden.COMPLETADA and instance.estado != EstadoOrden.COMPLETADA:
             if hasattr(instance, 'ticket_insumos') and instance.ticket_insumos.estado != EstadoTicket.ENTREGADO:
@@ -112,14 +116,14 @@ from .serializers import TicketInsumoSerializer
 class TicketInsumoViewSet(viewsets.ModelViewSet):
     queryset = TicketInsumo.objects.all().select_related('orden_produccion', 'despachador').prefetch_related('detalles__producto')
     serializer_class = TicketInsumoSerializer
-    permission_classes = [IsJefeProduccionOrGerente]
-    filterset_fields = ['estado']
+    permission_classes = [OperarioPuedeCrearYEditarOrdenes]
+    filterset_fields = ['estado', 'orden_produccion__responsable']
 
     @action(detail=True, methods=['post'])
     def entregar(self, request, pk=None):
         ticket = self.get_object()
-        if ticket.estado != EstadoTicket.SOLICITADO:
-            return Response({'detail': 'El ticket ya ha sido procesado.'}, status=status.HTTP_400_BAD_REQUEST)
+        if ticket.estado == EstadoTicket.ENTREGADO:
+            return Response({'detail': 'El ticket ya ha sido entregado.'}, status=status.HTTP_400_BAD_REQUEST)
         
         bodega_id = request.data.get('bodega_origen_id')
         if not bodega_id:

@@ -206,7 +206,7 @@ class UserListView(generics.ListAPIView):
   
     queryset = User.objects.all()
     serializer_class = UserListSerializer
-    permission_classes = [IsAuthenticated, EsGerenteOSoloLectura]
+    permission_classes = [IsAuthenticated, EsGerente]
    
     search_fields = ['email', 'first_name', 'last_name']
     ordering_fields = ['date_joined', 'last_name', 'rol']
@@ -217,7 +217,7 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
    
     queryset = User.objects.all()
     serializer_class = UserDetailSerializer
-    permission_classes = [IsAuthenticated, EsGerenteOSoloLectura]
+    permission_classes = [IsAuthenticated, EsGerente]
     http_method_names = ['get', 'patch', 'delete']
 
     def perform_destroy(self, instance):

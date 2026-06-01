@@ -18,6 +18,7 @@ class AuditLogListView(generics.ListAPIView):
    
     queryset = AuditLog.objects.select_related('user').all()
     serializer_class = AuditLogSerializer
+    permission_classes = [IsAuthenticated, EsGerente]
    
     filterset_fields = ['action', 'module', 'user']
     search_fields = ['user_email', 'description']
