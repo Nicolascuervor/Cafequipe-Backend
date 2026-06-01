@@ -6,34 +6,32 @@ django.setup()
 
 from apps.inventory.models import Producto
 
+def _determine_unit(nombre):
+    if any(k in nombre for k in ['leche', 'líquida', 'liquida', 'agua']):
+        return 'L'
+    if any(k in nombre for k in ['azúcar', 'azucar', 'bicarbonato', 'café', 'cafe', 'cultivo', 'coco', 'macadamia', 'enzima', 'sorbato']):
+        if any(k in nombre for k in [' 100 g', ' 500g', '500 gramos']):
+            return 'PAQ'
+        elif any(k in nombre for k in ['gramos', ' g ']):
+            return 'G'
+        return 'KG'
+    if 'caja' in nombre:
+        return 'CAJ'
+    if any(k in nombre for k in ['bolsa', 'doy pack', 'bol ', 'pouch', 'guasca']):
+        return 'PAQ'
+    if any(k in nombre for k in ['etiqueta', 'envase', 'foil']):
+        return 'UND'
+    if any(k in nombre for k in ['mermelada', 'arequipe', 'galleta', 'bebida']):
+        return 'UND'
+    return None
+
 def smart_update_units():
     productos = Producto.objects.all()
     actualizados = 0
 
     for p in productos:
         nombre = p.nombre.lower()
-        nueva_unidad = None
-
-        if 'leche' in nombre or 'líquida' in nombre or 'liquida' in nombre or 'agua' in nombre:
-            nueva_unidad = 'L'
-        elif 'azúcar' in nombre or 'azucar' in nombre or 'bicarbonato' in nombre or 'café' in nombre or 'cafe' in nombre or 'cultivo' in nombre or 'coco' in nombre or 'macadamia' in nombre or 'enzima' in nombre or 'sorbato' in nombre:
-            # Si incluye "100 g", "500g" en el nombre podríamos pasarlo a gramos, 
-            # pero típicamente los polvos/granos a granel se miden en Kilos o Gramos.
-            if ' 100 g' in nombre or ' 500g' in nombre or '500 gramos' in nombre:
-                # wait, actually doy packs are packages.
-                nueva_unidad = 'PAQ'
-            elif 'gramos' in nombre or ' g ' in nombre:
-                nueva_unidad = 'G'
-            else:
-                nueva_unidad = 'KG'
-        elif 'caja' in nombre:
-            nueva_unidad = 'CAJ'
-        elif 'bolsa' in nombre or 'doy pack' in nombre or 'bol ' in nombre or 'pouch' in nombre or 'guasca' in nombre:
-            nueva_unidad = 'PAQ'
-        elif 'etiqueta' in nombre or 'envase' in nombre or 'foil' in nombre:
-            nueva_unidad = 'UND'
-        elif 'mermelada' in nombre or 'arequipe' in nombre or 'galleta' in nombre or 'bebida' in nombre:
-            nueva_unidad = 'UND'
+        nueva_unidad = _determine_unit(nombre)
         
         # Override for specific edge cases from the screenshot
         if 'envase' in nombre:

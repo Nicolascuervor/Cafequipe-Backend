@@ -3,30 +3,22 @@ from pathlib import Path
 from datetime import timedelta
 import environ
 
-# ─────────────────────────────────────────────
 # PATHS
-# ─────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ─────────────────────────────────────────────
 # VARIABLES DE ENTORNO
 # django-environ lee el archivo .env automáticamente
-# ─────────────────────────────────────────────
 env = environ.Env(
     DEBUG=(bool, False)
 )
 environ.Env.read_env(BASE_DIR / '.env')
 
-# ─────────────────────────────────────────────
 # SEGURIDAD CORE
-# ─────────────────────────────────────────────
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.ngrok-free.app', '.ngrok.io'])
 
-# ─────────────────────────────────────────────
 # APLICACIONES
-# ─────────────────────────────────────────────
 DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -57,10 +49,8 @@ LOCAL_APPS = [
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
-# ─────────────────────────────────────────────
 # MIDDLEWARE
 # corsheaders DEBE ir primero en la lista
-# ─────────────────────────────────────────────
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',       # ← PRIMERO
     'django.middleware.security.SecurityMiddleware',
@@ -92,10 +82,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# ─────────────────────────────────────────────
 # BASE DE DATOS — PostgreSQL
 # django-environ parsea la URL completa
-# ─────────────────────────────────────────────
 DATABASES = {
     'default': env.db('DATABASE_URL')
 }
@@ -103,15 +91,11 @@ DATABASES['default']['ATOMIC_REQUESTS'] = True
 # ATOMIC_REQUESTS: cada request HTTP se envuelve en una transacción
 # Si algo falla, se hace rollback completo — protege la integridad del inventario
 
-# ─────────────────────────────────────────────
 # MODELO DE USUARIO PERSONALIZADO
 # Siempre definirlo ANTES de la primera migración
-# ─────────────────────────────────────────────
 AUTH_USER_MODEL = 'users.User'
 
-# ─────────────────────────────────────────────
 # VALIDACIÓN DE CONTRASEÑAS
-# ─────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
@@ -120,14 +104,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# ─────────────────────────────────────────────
 # RECUPERACIÓN DE CONTRASEÑA
-# ─────────────────────────────────────────────
 PASSWORD_RESET_TIMEOUT = 3600  # 1 hora en segundos
 
-# ─────────────────────────────────────────────
 # HASHING DE CONTRASEÑAS — bcrypt (Factor de costo 12 por defecto)
-# ─────────────────────────────────────────────
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
@@ -137,9 +117,7 @@ PASSWORD_HASHERS = [
 ]
 
 
-# ─────────────────────────────────────────────
 # DJANGO REST FRAMEWORK
-# ─────────────────────────────────────────────
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -160,9 +138,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-# ─────────────────────────────────────────────
 # JWT — Simple JWT
-# ─────────────────────────────────────────────
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(
         minutes=env.int('JWT_ACCESS_TOKEN_LIFETIME_MINUTES', default=60)
@@ -178,11 +154,9 @@ SIMPLE_JWT = {
     'TOKEN_OBTAIN_SERIALIZER': 'apps.users.serializers.CustomTokenObtainPairSerializer',
 }
 
-# ─────────────────────────────────────────────
 # CORS — Cross-Origin Resource Sharing
 # Necesario para que React (puerto 5173) pueda
 # hablar con Django (puerto 8000)
-# ─────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = env.list(
     'CORS_ALLOWED_ORIGINS',
     default=['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8081', 'http://localhost:8000']
@@ -197,9 +171,7 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# ─────────────────────────────────────────────
 # SWAGGER / OPENAPI — drf-spectacular
-# ─────────────────────────────────────────────
 SPECTACULAR_SETTINGS = {
     'TITLE': 'CafeQuipe Inventory API',
     'DESCRIPTION': (
@@ -220,17 +192,13 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
-# ─────────────────────────────────────────────
 # INTERNACIONALIZACIÓN
-# ─────────────────────────────────────────────
 LANGUAGE_CODE = 'es-co'
 TIME_ZONE = 'America/Bogota'
 USE_I18N = True
 USE_TZ = True
 
-# ─────────────────────────────────────────────
 # ARCHIVOS ESTÁTICOS Y MEDIA
-# ─────────────────────────────────────────────
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
@@ -238,9 +206,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ─────────────────────────────────────────────
 # CORREO ELECTRÓNICO (SMTP)
-# ─────────────────────────────────────────────
 EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = env.int('EMAIL_PORT', default=587)

@@ -68,8 +68,8 @@ class Producto(AuditModel):
     categoria_principal = models.CharField(
         max_length=2,
         choices=CategoriaPrincipal.choices,
-        null=True,
         blank=True,
+        default='',
         verbose_name='categoría principal',
     )
     
@@ -234,20 +234,20 @@ class StockBodega(models.Model):
     rack = models.CharField(
         max_length=100, 
         blank=True, 
-        null=True, 
+        default='', 
         verbose_name='rack de almacenamiento'
     )
     nivel_ubicacion = models.CharField(
         max_length=1,
         choices=NivelUbicacion.choices,
         blank=True,
-        null=True,
+        default='',
         verbose_name='nivel (A, B, C, D)'
     )
     estiba = models.CharField(
         max_length=50,
         blank=True,
-        null=True,
+        default='',
         verbose_name='número/identificador de estiba'
     )
 

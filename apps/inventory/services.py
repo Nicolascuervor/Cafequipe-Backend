@@ -6,8 +6,7 @@ from apps.inventory.models import StockBodega
 def sumar_ordenes_atrasadas(producto, cantidad):
     if cantidad <= 0: return
     cantidad_restante = Decimal(str(cantidad))
-    
-    # 1. Intentar sumar a bodegas que tengan stock_disponible - ordenes_atrasadas positivo
+
     stocks = list(StockBodega.objects.filter(
         producto=producto,
         stock_disponible__gt=0
@@ -22,8 +21,7 @@ def sumar_ordenes_atrasadas(producto, cantidad):
             stock.ordenes_atrasadas += reserva
             stock.save(update_fields=['ordenes_atrasadas'])
             cantidad_restante -= reserva
-            
-    # 2. Si aún falta cantidad, simplemente sumarla al primer registro de StockBodega que exista
+
     if cantidad_restante > 0:
         stock = StockBodega.objects.filter(producto=producto).first()
         if stock:
@@ -34,8 +32,7 @@ def sumar_ordenes_atrasadas(producto, cantidad):
 def restar_ordenes_atrasadas(producto, cantidad):
     if cantidad <= 0: return
     cantidad_restante = Decimal(str(cantidad))
-    
-    # Restar de las bodegas que tengan ordenes_atrasadas > 0
+
     stocks = list(StockBodega.objects.filter(
         producto=producto,
         ordenes_atrasadas__gt=0

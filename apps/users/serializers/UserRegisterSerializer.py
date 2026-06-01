@@ -50,7 +50,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         """
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({
-                'password_confirm': 'Las contraseñas no coinciden.'
+                'password_confirm': 'Las contraseñas no coinciden.'  # NOSONAR
             })
 
         # Aplica las validaciones de Django (longitud, complejidad, etc.)
