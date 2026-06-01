@@ -1,6 +1,6 @@
 from rest_framework import viewsets, serializers
 from apps.inventory.models import StockBodega
-from .models import Receta, OrdenProduccion, ParametroCalidad, ControlCalidadLote, EstadoOrden
+from .models import Receta, OrdenProduccion, ParametroCalidad, ControlCalidadLote, EstadoOrden, EstadoTicket
 from .serializers import (
     RecetaSerializer, OrdenProduccionSerializer,
     ParametroCalidadSerializer, ControlCalidadLoteSerializer
@@ -59,6 +59,9 @@ class OrdenProduccionViewSet(viewsets.ModelViewSet):
         nuevo_estado = serializer.validated_data.get('estado', instance.estado)
 
         if nuevo_estado == EstadoOrden.COMPLETADA and instance.estado != EstadoOrden.COMPLETADA:
+            if hasattr(instance, 'ticket_insumos') and instance.ticket_insumos.estado != EstadoTicket.ENTREGADO:
+                raise serializers.ValidationError({"estado": "No se puede completar la orden sin haber despachado (entregado) el Ticket de Insumos correspondiente."})
+
             if not hasattr(instance, 'control_calidad') or not instance.control_calidad.aprobado_final:
                 raise serializers.ValidationError({"estado": "No se puede completar la orden sin un Control de Calidad Aprobado."})
             

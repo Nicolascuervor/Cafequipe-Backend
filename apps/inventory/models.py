@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
+from decimal import Decimal
 
 
 
@@ -50,6 +51,16 @@ class NivelUbicacion(models.TextChoices):
     NIVEL_D = 'D', 'Nivel D'
 
 
+class UnidadMedida(models.TextChoices):
+    KILOGRAMO = 'KG', 'Kilogramos (kg)'
+    GRAMO = 'G', 'Gramos (g)'
+    LITRO = 'L', 'Litros (L)'
+    MILILITRO = 'ML', 'Mililitros (ml)'
+    UNIDAD = 'UND', 'Unidades (und)'
+    CAJA = 'CAJ', 'Cajas'
+    PAQUETE = 'PAQ', 'Paquetes'
+
+
 class Producto(AuditModel):
     # Identificadores únicos comerciales
     nombre = models.CharField(max_length=150)
@@ -60,6 +71,13 @@ class Producto(AuditModel):
         null=True,
         blank=True,
         verbose_name='categoría principal',
+    )
+    
+    unidad_medida = models.CharField(
+        max_length=3,
+        choices=UnidadMedida.choices,
+        default=UnidadMedida.UNIDAD,
+        verbose_name='unidad de medida',
     )
     
     sub_categoria = models.ForeignKey(
@@ -85,13 +103,15 @@ class Producto(AuditModel):
     )
 
     # Parámetros del modelo de control continuo y periódico
-    inventario_seguridad = models.PositiveIntegerField(
-        default=0,
+    inventario_seguridad = models.DecimalField(
+        max_digits=12, decimal_places=4,
+        default=Decimal('0.0000'),
         help_text='Stock mínimo de reserva ante variaciones de la demanda o retrasos.',
         verbose_name='inventario de seguridad',
     )
-    punto_reorden = models.PositiveIntegerField(
-        default=0,
+    punto_reorden = models.DecimalField(
+        max_digits=12, decimal_places=4,
+        default=Decimal('0.0000'),
         help_text='Nivel de existencias que dispara automáticamente una orden de reabastecimiento.',
         verbose_name='punto de reorden',
     )
@@ -179,17 +199,20 @@ class StockBodega(models.Model):
         related_name='existencias_bodega',
     )
 
-    stock_disponible = models.IntegerField(
-        default=0,
+    stock_disponible = models.DecimalField(
+        max_digits=12, decimal_places=4,
+        default=Decimal('0.0000'),
         verbose_name='stock disponible',
     )
-    pedidos_abiertos = models.PositiveIntegerField(
-        default=0,
+    pedidos_abiertos = models.DecimalField(
+        max_digits=12, decimal_places=4,
+        default=Decimal('0.0000'),
         help_text='Cantidad en órdenes de compra emitidas.',
         verbose_name='pedidos abiertos',
     )
-    ordenes_atrasadas = models.PositiveIntegerField(
-        default=0,
+    ordenes_atrasadas = models.DecimalField(
+        max_digits=12, decimal_places=4,
+        default=Decimal('0.0000'),
         help_text='Cantidad comprometida no entregada.',
         verbose_name='órdenes atrasadas',
     )
