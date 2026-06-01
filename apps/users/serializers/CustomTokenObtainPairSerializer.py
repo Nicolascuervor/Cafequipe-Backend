@@ -8,6 +8,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     La información del usuario debe consultarse aparte con GET /api/v1/auth/me/
     """
 
+    default_error_messages = {
+        'no_active_account': 'Correo electrónico o contraseña incorrectos',
+    }
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
