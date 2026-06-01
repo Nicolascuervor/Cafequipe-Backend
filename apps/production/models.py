@@ -8,7 +8,6 @@ import random
 import string
 
 class Receta(AuditModel):
-    # La receta siempre está amarrada a un Producto Terminado (PR)
     producto_terminado = models.OneToOneField(
         Producto,
         on_delete=models.CASCADE,

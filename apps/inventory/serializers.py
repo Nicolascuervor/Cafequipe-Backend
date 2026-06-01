@@ -69,7 +69,7 @@ class BodegaListSerializer(serializers.ModelSerializer):
         fields = [
             'url', 'id', 'nombre', 'ubicacion',
             'administrador', 'administrador_nombre',
-            'catalogo_admitido',
+            'catalogo_admitido', 'permite_stock_negativo',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -86,7 +86,7 @@ class BodegaDetailSerializer(serializers.ModelSerializer):
         fields = [
             'url', 'id', 'nombre', 'ubicacion',
             'administrador', 'administrador_nombre',
-            'catalogo_admitido',
+            'catalogo_admitido', 'permite_stock_negativo',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -104,6 +104,8 @@ class StockBodegaSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='inventory:stock-detail')
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     producto_unidad_medida_display = serializers.CharField(source='producto.get_unidad_medida_display', read_only=True)
+    producto_costo_unitario = serializers.DecimalField(source='producto.costo_unitario', max_digits=12, decimal_places=2, read_only=True)
+    producto_clasificacion = serializers.CharField(source='producto.clasificacion', read_only=True)
     bodega_nombre = serializers.CharField(source='bodega.nombre', read_only=True)
     coordenada_fisica = serializers.CharField(read_only=True)
     stock_proyectado = serializers.IntegerField(read_only=True)
@@ -115,6 +117,7 @@ class StockBodegaSerializer(serializers.ModelSerializer):
             'url', 'id',
             'bodega', 'bodega_nombre',
             'producto', 'producto_nombre', 'producto_unidad_medida_display',
+            'producto_costo_unitario', 'producto_clasificacion',
             'codigo_lote',
             'fecha_vencimiento',
             'stock_disponible',

@@ -19,7 +19,6 @@ class AuditLog(models.Model):
         USER_DEACTIVATED = 'USER_DEACTIVATED', 'Usuario desactivado'
         USER_ACTIVATED   = 'USER_ACTIVATED',   'Usuario activado'
         PASSWORD_CHANGED = 'PASSWORD_CHANGED', 'Contraseña cambiada'
-        # Inventario
         CATEGORIA_CREATED = 'CATEGORIA_CREATED', 'Categoría creada'
         CATEGORIA_UPDATED = 'CATEGORIA_UPDATED', 'Categoría actualizada'
         CATEGORIA_DELETED = 'CATEGORIA_DELETED', 'Categoría eliminada'
