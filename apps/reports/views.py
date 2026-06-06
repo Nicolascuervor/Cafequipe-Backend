@@ -15,7 +15,7 @@ class ABCAnalysisView(APIView):
     def get(self, request):
         # Agrupar productos y calcular el valor total del inventario disponible
         productos = Producto.objects.annotate(
-            total_stock=Coalesce(Sum('stock_bodega__stock_disponible'), Decimal('0.0000'), output_field=DecimalField())
+            total_stock=Coalesce(Sum('existencias_bodega__stock_disponible'), Decimal('0.0000'), output_field=DecimalField())
         ).annotate(
             total_value=ExpressionWrapper(F('total_stock') * F('costo_unitario'), output_field=DecimalField())
         ).filter(total_value__gt=0).order_by('-total_value')
