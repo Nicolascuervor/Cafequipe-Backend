@@ -1,0 +1,156 @@
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper
+from django.db.models.functions import Coalesce
+from django.utils import timezone
+from decimal import Decimal
+
+from apps.inventory.models import Producto, StockBodega
+from apps.production.models import OrdenProduccion, EstadoOrden
+
+class ABCAnalysisView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Agrupar productos y calcular el valor total del inventario disponible
+        productos = Producto.objects.annotate(
+            total_stock=Coalesce(Sum('stock_bodega__stock_disponible'), Decimal('0.0000'), output_field=DecimalField())
+        ).annotate(
+            total_value=ExpressionWrapper(F('total_stock') * F('costo_unitario'), output_field=DecimalField())
+        ).filter(total_value__gt=0).order_by('-total_value')
+
+        total_inventory_value = sum(p.total_value for p in productos)
+        if total_inventory_value == 0:
+            return Response({"total_inventory_value": 0, "clasificacion": {"A": [], "B": [], "C": []}})
+
+        cumulative_value = Decimal('0.0')
+        abc_data = {"A": [], "B": [], "C": []}
+
+        for p in productos:
+            cumulative_value += p.total_value
+            percentage = cumulative_value / total_inventory_value
+            
+            item_data = {
+                "id": p.id,
+                "nombre": p.nombre,
+                "unidad": p.unidad_medida,
+                "stock_total": p.total_stock,
+                "costo_unitario": p.costo_unitario,
+                "valor_total": p.total_value,
+                "porcentaje_acumulado": round(percentage * 100, 2)
+            }
+
+            if percentage <= Decimal('0.80'):
+                item_data["categoria_abc"] = "A"
+                abc_data["A"].append(item_data)
+            elif percentage <= Decimal('0.95'):
+                item_data["categoria_abc"] = "B"
+                abc_data["B"].append(item_data)
+            else:
+                item_data["categoria_abc"] = "C"
+                abc_data["C"].append(item_data)
+
+        return Response({
+            "total_inventory_value": total_inventory_value,
+            "clasificacion": abc_data
+        })
+
+
+class InventoryKPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        hoy = timezone.now().date()
+        
+        # 1. Pérdida por producto vencido
+        lotes_vencidos = StockBodega.objects.filter(
+            fecha_vencimiento__lt=hoy, 
+            stock_disponible__gt=0
+        ).select_related('producto')
+        
+        perdida_vencidos = Decimal('0.0')
+        detalles_vencidos = []
+        for lote in lotes_vencidos:
+            costo_perdida = lote.stock_disponible * lote.producto.costo_unitario
+            perdida_vencidos += costo_perdida
+            detalles_vencidos.append({
+                "producto": lote.producto.nombre,
+                "lote": lote.codigo_lote,
+                "cantidad": lote.stock_disponible,
+                "costo_perdida": costo_perdida,
+                "fecha_vencimiento": lote.fecha_vencimiento
+            })
+            
+        # 2. Precisión del Inventario (Placeholder, falta módulo tomas físicas)
+        precision_inventario = 100.0
+        
+        return Response({
+            "kpi_perdida_vencidos": {
+                "total_perdida_dinero": perdida_vencidos,
+                "detalles": detalles_vencidos
+            },
+            "kpi_precision_inventario": {
+                "valor": precision_inventario,
+                "nota": "Se asume 100% al no contar con un submódulo de tomas físicas recurrentes."
+            }
+        })
+
+
+class ProductionKPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        ordenes_completadas = OrdenProduccion.objects.filter(
+            estado=EstadoOrden.COMPLETADA,
+            cantidad_obtenida__isnull=False
+        )
+        
+        total_ordenes = ordenes_completadas.count()
+        if total_ordenes == 0:
+            return Response({"detail": "No hay órdenes completadas con datos para calcular KPIs."})
+            
+        sum_rendimiento = Decimal('0.0')
+        sum_desperdicio = Decimal('0.0')
+        ordenes_con_faltantes = 0
+        
+        detalles = []
+        
+        for orden in ordenes_completadas:
+            esperado = orden.cantidad_esperada
+            obtenido = orden.cantidad_obtenida
+            
+            # Rendimiento = (obtenido / esperado) * 100
+            rendimiento = (obtenido / esperado) * 100 if esperado > 0 else Decimal('0.0')
+            
+            # Merma / Desperdicio (Si se obtuvo menos de lo esperado)
+            merma = Decimal('0.0')
+            if obtenido < esperado:
+                merma = ((esperado - obtenido) / esperado) * 100
+                ordenes_con_faltantes += 1
+                
+            sum_rendimiento += rendimiento
+            sum_desperdicio += merma
+            
+            detalles.append({
+                "lote": orden.codigo_lote,
+                "producto": orden.receta.producto_terminado.nombre,
+                "esperado": esperado,
+                "obtenido": obtenido,
+                "rendimiento_porcentaje": round(rendimiento, 2),
+                "merma_porcentaje": round(merma, 2)
+            })
+            
+        rendimiento_promedio = sum_rendimiento / total_ordenes
+        desperdicio_promedio = sum_desperdicio / total_ordenes
+        tasa_faltantes = (Decimal(ordenes_con_faltantes) / Decimal(total_ordenes)) * 100
+        
+        return Response({
+            "kpi_produccion": {
+                "total_ordenes_analizadas": total_ordenes,
+                "rendimiento_promedio": round(rendimiento_promedio, 2),
+                "desperdicio_promedio": round(desperdicio_promedio, 2),
+                "tasa_ordenes_con_faltantes": round(tasa_faltantes, 2),
+                "detalles_lotes": detalles
+            }
+        })
