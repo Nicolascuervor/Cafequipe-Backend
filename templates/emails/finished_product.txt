@@ -1,0 +1,1 @@
+La Orden {{ orden.codigo_lote }} ha sido completada y está lista para bodega.

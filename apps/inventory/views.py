@@ -283,10 +283,9 @@ class AlertasStockView(APIView):
             stock_disponible__lt=F('producto__inventario_seguridad') * 0.6
         )
 
-        # 2. Por vencer: fecha_vencimiento <= 30 días y hay stock
+        # 2. Por vencer: fecha_vencimiento <= 30 días y hay stock (incluye ya vencidos)
         por_vencer = StockBodega.objects.select_related('bodega', 'producto').filter(
             fecha_vencimiento__lte=limite_vencimiento,
-            fecha_vencimiento__gte=hoy,
             stock_disponible__gt=0
         )
 

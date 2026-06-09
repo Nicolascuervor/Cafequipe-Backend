@@ -1,0 +1,1 @@
+El producto {{ stock.producto.nombre }} está agotado en la bodega {{ stock.bodega.nombre }}.

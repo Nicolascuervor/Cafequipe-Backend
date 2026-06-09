@@ -33,18 +33,26 @@ class EmailThread(threading.Thread):
                 error_message=str(e)
             )
 
-def send_async_email(user, subject, template_name, context, notification_type):
+def send_async_email(user, subject, template_name, context, notification_type, recipient_email=None):
     """
     Sends an email asynchronously using threading to avoid blocking the HTTP request.
     Creates a NotificationLog entry before sending to track the status.
     """
-    # 1. Create the log entry as PENDING
+    # Si no se provee recipient_email, se usa el del user
+    final_email = recipient_email if recipient_email else (user.email if user else '')
+
+    # 1. ALWAYS create the log entry as PENDING
     log_entry = NotificationLog.objects.create(
         user=user,
+        recipient_email=final_email,
         notification_type=notification_type,
         subject=subject,
-        status=NotificationLog.Status.PENDING
+        status=NotificationLog.Status.PENDING if final_email else NotificationLog.Status.FAILED,
+        error_message="No se configuró un correo de destino." if not final_email else ""
     )
+
+    if not final_email:
+        return # No hay a quién enviar, pero ya se guardó en BD para el Frontend
 
     # 2. Render templates
     html_content = render_to_string(f'emails/{template_name}.html', context)
@@ -55,7 +63,7 @@ def send_async_email(user, subject, template_name, context, notification_type):
         subject=subject,
         html_content=html_content,
         text_content=text_content,
-        recipient_list=[user.email],
+        recipient_list=[final_email],
         notification_log_id=log_entry.id
     ).start()
 
@@ -103,4 +111,63 @@ def send_password_reset_email(user, reset_link):
         template_name='password_reset',
         context=context,
         notification_type=NotificationLog.NotificationType.PASSWORD_RESET
+    )
+
+def _get_admin_email():
+    from .models import SystemEmailConfiguration
+    config = SystemEmailConfiguration.load()
+    return config.admin_email if config.notify_alerts else None
+
+def send_supply_request_email(ticket):
+    admin_email = _get_admin_email()
+    subject = f'Solicitud de Insumos - Orden {ticket.orden_produccion.codigo_lote}'
+    context = {'ticket': ticket}
+    send_async_email(
+        user=None, subject=subject, template_name='supply_request', context=context,
+        notification_type=NotificationLog.NotificationType.SUPPLY_REQUEST, recipient_email=admin_email
+    )
+
+def send_supply_delivered_email(ticket):
+    responsable = ticket.orden_produccion.responsable
+    subject = f'Insumos Entregados - Orden {ticket.orden_produccion.codigo_lote}'
+    context = {'ticket': ticket}
+    send_async_email(
+        user=responsable, subject=subject, template_name='supply_delivered', context=context,
+        notification_type=NotificationLog.NotificationType.SUPPLY_DELIVERED, recipient_email=responsable.email
+    )
+
+def send_qc_rejected_email(control_calidad):
+    responsable = control_calidad.orden_produccion.responsable
+    subject = f'Control de Calidad RECHAZADO - Orden {control_calidad.orden_produccion.codigo_lote}'
+    context = {'control_calidad': control_calidad}
+    send_async_email(
+        user=responsable, subject=subject, template_name='qc_rejected', context=context,
+        notification_type=NotificationLog.NotificationType.QC_REJECTED, recipient_email=responsable.email
+    )
+
+def send_finished_product_email(orden):
+    admin_email = _get_admin_email()
+    subject = f'Recepción de Producto Terminado - Orden {orden.codigo_lote}'
+    context = {'orden': orden}
+    send_async_email(
+        user=None, subject=subject, template_name='finished_product', context=context,
+        notification_type=NotificationLog.NotificationType.FINISHED_PRODUCT, recipient_email=admin_email
+    )
+
+def send_out_of_stock_email(stock):
+    admin_email = _get_admin_email()
+    subject = f'Stock Agotado - {stock.producto.nombre}'
+    context = {'stock': stock}
+    send_async_email(
+        user=None, subject=subject, template_name='out_of_stock', context=context,
+        notification_type=NotificationLog.NotificationType.OUT_OF_STOCK, recipient_email=admin_email
+    )
+
+def send_product_expired_email(stock):
+    admin_email = _get_admin_email()
+    subject = f'Producto Vencido - {stock.producto.nombre} Lote {stock.codigo_lote}'
+    context = {'stock': stock}
+    send_async_email(
+        user=None, subject=subject, template_name='product_expired', context=context,
+        notification_type=NotificationLog.NotificationType.PRODUCT_EXPIRED, recipient_email=admin_email
     )

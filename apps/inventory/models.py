@@ -140,7 +140,7 @@ class Bodega(AuditModel):
         help_text='Usuario responsable de la bodega (debe ser Jefe de Bodega o Gerente).',
     )
 
-    def default_catalogo(self):
+    def default_catalogo():
         return [CategoriaPrincipal.MATERIA_PRIMA, CategoriaPrincipal.INSUMO, CategoriaPrincipal.PRODUCTO]
 
     catalogo_admitido = ArrayField(

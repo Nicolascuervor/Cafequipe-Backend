@@ -1,0 +1,4 @@
+Se ha generado una nueva solicitud de insumos.
+Orden: {{ ticket.orden_produccion.codigo_lote }}
+Receta: {{ ticket.orden_produccion.receta.producto_terminado.nombre }}
+Responsable: {{ ticket.orden_produccion.responsable.get_full_name }}

@@ -1,0 +1,1 @@
+Los insumos de la orden {{ ticket.orden_produccion.codigo_lote }} fueron entregados.

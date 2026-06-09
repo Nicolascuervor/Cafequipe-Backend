@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitud de Insumos</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #FFFFFF; font-family: 'Segoe UI', Helvetica, Arial, sans-serif;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFFFF; table-layout: fixed;">
+        <tr>
+            <td align="center" style="padding: 60px 20px;">
+                <table width="100%" max-width="520" border="0" cellspacing="0" cellpadding="0" style="max-width: 520px; background-color: #F7F3EE; border-radius: 24px; overflow: hidden;">
+                    <tr>
+                        <td align="center" style="padding: 55px 50px 30px 50px;">
+                            <span style="color: #2C231E; font-size: 16px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;">Syncra</span>
+                            <div style="color: #A8998E; font-size: 10px; margin-top: 6px; letter-spacing: 2px; font-weight: 600;">CAFEQUIPE WMS</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0px 50px 50px 50px; text-align: center;">
+                            <h1 style="color: #2C231E; font-family: 'Georgia', serif; font-size: 28px; font-weight: normal; margin: 0 0 16px 0; line-height: 1.3;">
+                                Solicitud de Insumos
+                            </h1>
+                            <p style="color: #615349; font-size: 14px; line-height: 1.6; margin: 0 0 40px 0; font-weight: 400;">
+                                Se ha generado una nueva solicitud de insumos para la Orden de Producción <strong style="color: #E27923;">{{ ticket.orden_produccion.codigo_lote }}</strong>.
+                            </p>
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #EFE9E2; border-radius: 16px; margin-bottom: 45px;">
+                                <tr>
+                                    <td style="padding: 24px 30px; text-align: left;">
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 16px; border-bottom: 1px solid #E4DBD0; padding-bottom: 14px;">
+                                            <tr>
+                                                <td style="color: #8A796E; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; width: 40%;">Receta</td>
+                                                <td style="color: #2C231E; font-size: 14px; font-weight: 600; text-align: right; width: 60%;">{{ ticket.orden_produccion.receta.producto_terminado.nombre }}</td>
+                                            </tr>
+                                        </table>
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td style="color: #8A796E; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; width: 30%;">Responsable</td>
+                                                <td style="color: #E27923; font-size: 14px; font-weight: 600; text-align: right; width: 70%;">{{ ticket.orden_produccion.responsable.get_full_name }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 30px 50px; background-color: #F1EAE2; text-align: center;">
+                            <p style="color: #9C8D82; font-size: 11px; margin: 0; line-height: 1.6; letter-spacing: 0.3px;">
+                                Este es un correo automático generado por Syncra.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

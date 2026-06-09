@@ -1,0 +1,1 @@
+El producto {{ stock.producto.nombre }} (Lote: {{ stock.codigo_lote }}) ha vencido.
