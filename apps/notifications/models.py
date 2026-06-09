@@ -27,6 +27,7 @@ class NotificationLog(models.Model):
     subject = models.CharField(max_length=255, verbose_name='Asunto')
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.PENDING, verbose_name='Estado')
     error_message = models.TextField(blank=True, default='', verbose_name='Mensaje de Error')
+    is_read = models.BooleanField(default=False, verbose_name='Leído')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Creación')
 
     class Meta:

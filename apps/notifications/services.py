@@ -39,18 +39,20 @@ def send_async_email(user, subject, template_name, context, notification_type, r
     Creates a NotificationLog entry before sending to track the status.
     """
     # Si no se provee recipient_email, se usa el del user
-    final_email = recipient_email if recipient_email else (user.email if user else None)
-    if not final_email:
-        return # No hay a quién enviar
+    final_email = recipient_email if recipient_email else (user.email if user else '')
 
-    # 1. Create the log entry as PENDING
+    # 1. ALWAYS create the log entry as PENDING
     log_entry = NotificationLog.objects.create(
         user=user,
         recipient_email=final_email,
         notification_type=notification_type,
         subject=subject,
-        status=NotificationLog.Status.PENDING
+        status=NotificationLog.Status.PENDING if final_email else NotificationLog.Status.FAILED,
+        error_message="No se configuró un correo de destino." if not final_email else ""
     )
+
+    if not final_email:
+        return # No hay a quién enviar, pero ya se guardó en BD para el Frontend
 
     # 2. Render templates
     html_content = render_to_string(f'emails/{template_name}.html', context)
@@ -118,7 +120,6 @@ def _get_admin_email():
 
 def send_supply_request_email(ticket):
     admin_email = _get_admin_email()
-    if not admin_email: return
     subject = f'Solicitud de Insumos - Orden {ticket.orden_produccion.codigo_lote}'
     context = {'ticket': ticket}
     send_async_email(
@@ -128,7 +129,6 @@ def send_supply_request_email(ticket):
 
 def send_supply_delivered_email(ticket):
     responsable = ticket.orden_produccion.responsable
-    if not responsable or not responsable.email: return
     subject = f'Insumos Entregados - Orden {ticket.orden_produccion.codigo_lote}'
     context = {'ticket': ticket}
     send_async_email(
@@ -138,7 +138,6 @@ def send_supply_delivered_email(ticket):
 
 def send_qc_rejected_email(control_calidad):
     responsable = control_calidad.orden_produccion.responsable
-    if not responsable or not responsable.email: return
     subject = f'Control de Calidad RECHAZADO - Orden {control_calidad.orden_produccion.codigo_lote}'
     context = {'control_calidad': control_calidad}
     send_async_email(
@@ -148,7 +147,6 @@ def send_qc_rejected_email(control_calidad):
 
 def send_finished_product_email(orden):
     admin_email = _get_admin_email()
-    if not admin_email: return
     subject = f'Recepción de Producto Terminado - Orden {orden.codigo_lote}'
     context = {'orden': orden}
     send_async_email(
@@ -158,7 +156,6 @@ def send_finished_product_email(orden):
 
 def send_out_of_stock_email(stock):
     admin_email = _get_admin_email()
-    if not admin_email: return
     subject = f'Stock Agotado - {stock.producto.nombre}'
     context = {'stock': stock}
     send_async_email(
@@ -168,7 +165,6 @@ def send_out_of_stock_email(stock):
 
 def send_product_expired_email(stock):
     admin_email = _get_admin_email()
-    if not admin_email: return
     subject = f'Producto Vencido - {stock.producto.nombre} Lote {stock.codigo_lote}'
     context = {'stock': stock}
     send_async_email(
