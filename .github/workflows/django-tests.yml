@@ -53,6 +53,10 @@ jobs:
       run: |
         python manage.py makemigrations --check --dry-run
         
-    - name: Ejecutar batería de Pruebas (Pytest)
+    - name: Ejecutar Pruebas Unitarias
       run: |
-        pytest
+        pytest tests/unit/
+
+    - name: Ejecutar Pruebas de Integración
+      run: |
+        pytest tests/integration/
