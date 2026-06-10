@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from django.db.models import F
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from datetime import timedelta
 
@@ -211,6 +213,7 @@ class StockBodegaListCreateView(generics.ListCreateAPIView):
     filterset_fields = ['bodega', 'producto', 'producto__categoria_principal', 'producto__clasificacion']
     search_fields = ['producto__nombre']
     ordering_fields = ['stock_disponible', 'updated_at']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
     def get_queryset(self):
         return StockBodega.objects.select_related(

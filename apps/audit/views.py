@@ -1,7 +1,8 @@
 # apps/audit/views.py
-from rest_framework import generics
+from rest_framework import generics, filters
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
+from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.users.permissions import EsGerente
 from .models import AuditLog
@@ -23,4 +24,5 @@ class AuditLogListView(generics.ListAPIView):
     filterset_fields = ['action', 'module', 'user']
     search_fields = ['user_email', 'description']
     ordering_fields = ['timestamp']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     ordering = ['-timestamp']

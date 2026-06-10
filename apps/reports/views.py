@@ -4,6 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, F, DecimalField, ExpressionWrapper
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from django.http import HttpResponse
+import openpyxl
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 from decimal import Decimal
 
 from apps.inventory.models import Producto, StockBodega
@@ -154,3 +158,59 @@ class ProductionKPIView(APIView):
                 "detalles_lotes": detalles
             }
         })
+
+
+class ExportExcelView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="reporte_inventario.xlsx"'
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Inventario"
+        ws.append(["Producto", "Bodega", "Stock Disponible", "Costo Unitario", "Valor Total", "Lote", "Vencimiento"])
+        
+        stocks = StockBodega.objects.select_related('producto', 'bodega').all()
+        for stock in stocks:
+            valor = stock.stock_disponible * stock.producto.costo_unitario
+            ws.append([
+                stock.producto.nombre,
+                stock.bodega.nombre,
+                float(stock.stock_disponible),
+                float(stock.producto.costo_unitario),
+                float(valor),
+                stock.codigo_lote,
+                str(stock.fecha_vencimiento) if stock.fecha_vencimiento else ""
+            ])
+            
+        wb.save(response)
+        return response
+
+class ExportPDFView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="reporte_inventario.pdf"'
+        
+        p = canvas.Canvas(response, pagesize=letter)
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(50, 750, "Reporte de Inventario")
+        
+        p.setFont("Helvetica", 10)
+        y = 720
+        stocks = StockBodega.objects.select_related('producto', 'bodega').all()
+        
+        for stock in stocks:
+            texto = f"{stock.producto.nombre} | Bodega: {stock.bodega.nombre} | Stock: {stock.stock_disponible}"
+            p.drawString(50, y, texto)
+            y -= 20
+            if y < 50:
+                p.showPage()
+                y = 750
+                
+        p.showPage()
+        p.save()
+        return response
