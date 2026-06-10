@@ -4,19 +4,13 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from apps.users.models import User
 
-# Fixture para obtener un cliente de pruebas específico de Django Rest Framework.
-# Esto nos permite hacer peticiones HTTP simuladas en formato JSON de forma nativa.
 @pytest.fixture
 def api_client():
     return APIClient()
 
-# El decorador pytest.mark.django_db permite que todas las pruebas dentro de esta clase
-# interactúen con la base de datos de forma aislada, limpiando los datos al terminar.
 @pytest.mark.django_db
 class TestAuthFlow:
-    
-    # Este método (fixture) se ejecuta automáticamente antes de cada prueba (autouse=True).
-    # Prepara el escenario creando un usuario en la base de datos temporal.
+
     @pytest.fixture(autouse=True)
     def setup_data(self):
         self.user_email = 'test@cafequipe.com'
