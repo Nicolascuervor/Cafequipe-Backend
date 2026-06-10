@@ -81,6 +81,7 @@ class TestControlCalidadLoteSerializer:
 
         control_existente = ControlCalidadLote.objects.create(orden_produccion=orden, observaciones='Vieja')
         ValorParametroCalidad.objects.create(control=control_existente, parametro=param_humedad, valor_decimal='15.0')
+        
 
         validated_data_nueva = {
             'orden_produccion': orden,
@@ -94,8 +95,10 @@ class TestControlCalidadLoteSerializer:
 
         assert ControlCalidadLote.objects.count() == 1
         assert control_actualizado.id == control_existente.id
+        
 
         assert control_actualizado.observaciones == 'Revisión Corregida'
+        
 
         assert ValorParametroCalidad.objects.count() == 1
         assert control_actualizado.valores.first().valor_decimal == Decimal('12.0000')

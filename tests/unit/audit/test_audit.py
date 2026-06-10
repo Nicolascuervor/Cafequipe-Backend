@@ -10,7 +10,6 @@ class TestAuditLogModel:
         return User.objects.create_user(email='auditor@cafequipe.com', password='123')
 
     def test_inmutabilidad_edicion(self, usuario):
-
         log = AuditLog.objects.create(
             user=usuario,
             user_email=usuario.email,
@@ -25,7 +24,6 @@ class TestAuditLogModel:
             log.save()
 
     def test_inmutabilidad_eliminacion(self, usuario):
-
         log = AuditLog.objects.create(
             user=usuario,
             user_email=usuario.email,
@@ -38,7 +36,6 @@ class TestAuditLogModel:
             log.delete()
 
     def test_str_auditlog(self, usuario):
-
         log = AuditLog.objects.create(
             user=usuario,
             user_email='prueba@cafequipe.com',

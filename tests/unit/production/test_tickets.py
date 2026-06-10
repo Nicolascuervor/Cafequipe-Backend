@@ -36,9 +36,11 @@ class TestTicketInsumoModel:
         orden, insumo = data_base
         ticket = TicketInsumo.objects.create(orden_produccion=orden)
 
+
         DetalleTicketInsumo.objects.create(
             ticket=ticket, producto=insumo, cantidad_solicitada=Decimal('50.0')
         )
+
 
         with pytest.raises(IntegrityError):
             DetalleTicketInsumo.objects.create(

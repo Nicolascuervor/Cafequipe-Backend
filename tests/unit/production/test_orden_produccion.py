@@ -15,6 +15,7 @@ class TestOrdenProduccionModel:
             email='jefe_prod@cafequipe.com', password='123', rol=User.Rol.JEFE_PRODUCCION
         )
         sub_cat = SubCategoria.objects.create(nombre='Productos Finales')
+        
 
         producto = Producto.objects.create(
             nombre='Café Molido Premium',
@@ -38,12 +39,13 @@ class TestOrdenProduccionModel:
             responsable=responsable
         )
 
+
         assert orden.estado == EstadoOrden.PLANIFICADA
+
 
         fecha_str = timezone.now().strftime('%Y%m%d')
         assert orden.codigo_lote.startswith(f'LOTE-{fecha_str}-')
 
         assert len(orden.codigo_lote) == 18
-
         fecha_esperada = timezone.now().date() + timedelta(days=30)
         assert orden.fecha_vencimiento == fecha_esperada

@@ -62,4 +62,5 @@ class TestRecetaModel:
             cantidad_necesaria=Decimal('15.5000')
         )
 
+
         assert str(ingrediente) == '15.5000 x Cacao en Polvo'
