@@ -28,8 +28,8 @@ dist/
 Thumbs.db
 Desktop.ini
 # Scripts de prueba locales
-test_*.py
-test_users_api.py
+/test_*.py
+/test_users_api.py
 seed_*.py
 reset_db.py
 docx_output.txt
