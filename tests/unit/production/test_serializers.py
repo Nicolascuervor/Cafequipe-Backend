@@ -55,10 +55,9 @@ class TestControlCalidadLoteSerializer:
         return orden, param_humedad, param_color
 
     def test_create_insert_anidado(self, setup_data):
-        """Prueba que se cree una bitácora nueva con sus parámetros hijos en un solo paso."""
+
         orden, param_humedad, param_color = setup_data
-        
-        # Simulamos la data que llegaría desde el frontend ya validada
+
         validated_data = {
             'orden_produccion': orden,
             'aprobado_final': False,
@@ -71,21 +70,19 @@ class TestControlCalidadLoteSerializer:
         
         serializer = ControlCalidadLoteSerializer()
         control = serializer.create(validated_data)
-        
-        # Verificamos inserción
+
         assert ControlCalidadLote.objects.count() == 1
         assert control.valores.count() == 2
         assert control.observaciones == 'Primera revisión'
 
     def test_create_upsert_anidado(self, setup_data):
-        """Prueba que si se envía otra vez la misma Orden, no la duplica, sino que sobreescribe los valores."""
+
         orden, param_humedad, _ = setup_data
-        
-        # 1. Creamos la primera bitácora manualmente
+
         control_existente = ControlCalidadLote.objects.create(orden_produccion=orden, observaciones='Vieja')
         ValorParametroCalidad.objects.create(control=control_existente, parametro=param_humedad, valor_decimal='15.0')
         
-        # 2. Invocamos create() con nueva data pero enviando la MISMA ORDEN
+
         validated_data_nueva = {
             'orden_produccion': orden,
             'aprobado_final': True,
@@ -95,15 +92,13 @@ class TestControlCalidadLoteSerializer:
         
         serializer = ControlCalidadLoteSerializer()
         control_actualizado = serializer.create(validated_data_nueva)
-        
-        # 3. Verificamos comportamiento Upsert
-        # Sigue habiendo SOLO 1 bitácora en la BD (No se crearon duplicados)
+
         assert ControlCalidadLote.objects.count() == 1
         assert control_actualizado.id == control_existente.id
         
-        # La observación cambió a la nueva
+
         assert control_actualizado.observaciones == 'Revisión Corregida'
         
-        # Sigue habiendo solo 1 parámetro hijo (el viejo de 15.0 fue borrado y reemplazado por 12.0)
+
         assert ValorParametroCalidad.objects.count() == 1
         assert control_actualizado.valores.first().valor_decimal == Decimal('12.0000')

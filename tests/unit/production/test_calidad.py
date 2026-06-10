@@ -12,7 +12,7 @@ class TestControlCalidadModel:
 
     @pytest.fixture
     def data_base(self):
-        """Prepara el ecosistema para poder crear una orden de producción."""
+
         responsable = User.objects.create_user(
             email='jefe@cafequipe.com', password='123', rol=User.Rol.JEFE_PRODUCCION
         )
@@ -28,10 +28,7 @@ class TestControlCalidadModel:
         return orden
 
     def test_bitacora_calidad_inicial_str(self, data_base):
-        """
-        Prueba que el control de calidad inicie sin aprobación (False por defecto)
-        y muestre correctamente el estado en su representación texto.
-        """
+
         orden = data_base
         
         control = ControlCalidadLote.objects.create(
@@ -42,10 +39,7 @@ class TestControlCalidadModel:
         assert 'RECHAZADO' in str(control)
 
     def test_valor_parametro_unico_por_control(self, data_base):
-        """
-        Prueba que no se pueda registrar el mismo parámetro dos veces en la 
-        misma bitácora de calidad (violación de unique_together).
-        """
+
         orden = data_base
         control = ControlCalidadLote.objects.create(orden_produccion=orden)
         
@@ -53,12 +47,10 @@ class TestControlCalidadModel:
             nombre='Humedad (%)', tipo_dato=TipoParametro.DECIMAL
         )
 
-        # 1. Primer registro del parámetro de humedad (Exitoso)
         ValorParametroCalidad.objects.create(
             control=control, parametro=parametro, valor_decimal='12.5'
         )
 
-        # 2. Intento de sobreescribir o duplicar el mismo parámetro en la misma orden
         with pytest.raises(IntegrityError):
             ValorParametroCalidad.objects.create(
                 control=control, parametro=parametro, valor_decimal='12.8'

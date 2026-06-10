@@ -24,7 +24,7 @@ class TestTicketInsumoModel:
         return orden, insumo
 
     def test_ticket_estado_inicial(self, data_base):
-        """Prueba que un ticket nuevo inicie en estado 'Solicitado'."""
+
         orden, _ = data_base
         ticket = TicketInsumo.objects.create(orden_produccion=orden)
         
@@ -32,16 +32,16 @@ class TestTicketInsumoModel:
         assert 'Solicitado' in str(ticket)
 
     def test_detalle_ticket_unico_por_producto(self, data_base):
-        """Bloquea duplicar el mismo insumo en el mismo ticket."""
+
         orden, insumo = data_base
         ticket = TicketInsumo.objects.create(orden_produccion=orden)
 
-        # 1. Asignamos el insumo por primera vez (Exitoso)
+
         DetalleTicketInsumo.objects.create(
             ticket=ticket, producto=insumo, cantidad_solicitada=Decimal('50.0')
         )
 
-        # 2. Intentamos volver a agregar el mismo insumo al mismo ticket
+
         with pytest.raises(IntegrityError):
             DetalleTicketInsumo.objects.create(
                 ticket=ticket, producto=insumo, cantidad_solicitada=Decimal('10.0')
