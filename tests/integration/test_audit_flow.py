@@ -28,10 +28,9 @@ class TestAuditFlow:
         self.subcategoria = SubCategoria.objects.create(nombre='SubCat Audit')
 
     def test_cp064_registro_automatico_auditoria(self, api_client):
-        """CP-064: Registro automático de acción en bitácora de auditoría."""
+
         api_client.force_authenticate(user=self.gerente)
-        
-        # Realizar acción
+
         payload = {
             'nombre': 'Cafe Audit',
             'categoria_principal': CategoriaPrincipal.PRODUCTO,
@@ -42,8 +41,7 @@ class TestAuditFlow:
         }
         res_prod = api_client.post(self.productos_url, payload, format='json')
         assert res_prod.status_code == status.HTTP_201_CREATED
-        
-        # Verificar auditoría
+
         res_audit = api_client.get(self.audit_url)
         assert res_audit.status_code == status.HTTP_200_OK
         data = res_audit.json().get('results', res_audit.json())
@@ -53,8 +51,7 @@ class TestAuditFlow:
         assert 'Cafe Audit' in data[0]['description']
 
     def test_cp065_consulta_bitacora_filtros(self, api_client):
-        """CP-065: Consulta de bitácora con filtros por usuario."""
-        # Se asume que el test anterior (u otro) generó auditoría, pero los tests de DB son aislados, así que generamos una acción primero.
+
         api_client.force_authenticate(user=self.gerente)
         payload = {
             'nombre': 'Cafe Audit 2',
@@ -65,8 +62,7 @@ class TestAuditFlow:
             'punto_reorden': '20'
         }
         api_client.post(self.productos_url, payload, format='json')
-        
-        # Filtrar
+
         res_audit = api_client.get(f"{self.audit_url}?user={self.gerente.id}")
         assert res_audit.status_code == status.HTTP_200_OK
         data = res_audit.json().get('results', res_audit.json())
@@ -74,7 +70,7 @@ class TestAuditFlow:
         assert all(item['user'] == str(self.gerente.id) for item in data)
 
     def test_cp066_cp067_inmutabilidad(self, api_client):
-        """CP-066 y CP-067: Intento de modificación y verificación de inmutabilidad."""
+
         api_client.force_authenticate(user=self.gerente)
         payload = {
             'nombre': 'Cafe Audit 3',
@@ -85,22 +81,19 @@ class TestAuditFlow:
             'punto_reorden': '20'
         }
         api_client.post(self.productos_url, payload, format='json')
-        
-        # Obtener log
+
         res_audit = api_client.get(self.audit_url)
         log_id = res_audit.json().get('results', res_audit.json())[0]['id']
-        
-        # Intentar modificar (debe fallar 405 Method Not Allowed ya que solo hay GET)
+
         res_patch = api_client.patch(f"{self.audit_url}{log_id}/", {'action': 'FALSO'}, format='json')
         assert res_patch.status_code in [status.HTTP_405_METHOD_NOT_ALLOWED, status.HTTP_404_NOT_FOUND, status.HTTP_403_FORBIDDEN]
-        
-        # Intentar eliminar con otro rol
+
         api_client.force_authenticate(user=self.operario)
         res_delete = api_client.delete(f"{self.audit_url}{log_id}/")
         assert res_delete.status_code in [status.HTTP_405_METHOD_NOT_ALLOWED, status.HTTP_404_NOT_FOUND, status.HTTP_403_FORBIDDEN]
 
     def test_cp068_bitacora_sin_resultados(self, api_client):
-        """CP-068: Bitácora sin resultados según filtros aplicados."""
+
         api_client.force_authenticate(user=self.gerente)
         # Filtro de búsqueda que no arroja resultados
         res_audit = api_client.get(f"{self.audit_url}?search=FALSO_ERROR")

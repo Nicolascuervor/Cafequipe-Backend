@@ -14,7 +14,7 @@ class TestMovementsFlow:
     
     @pytest.fixture(autouse=True)
     def setup_data(self):
-        # Usuarios
+
         self.jefe_bodega = User.objects.create_user(
             email='jefebodega@cafequipe.com', password='Password123!',
             rol=User.Rol.JEFE_BODEGA, first_name='Juan', last_name='Jefe'
@@ -23,8 +23,7 @@ class TestMovementsFlow:
             email='operario@cafequipe.com', password='Password123!',
             rol=User.Rol.OPERARIO, first_name='Pedro', last_name='Operario'
         )
-        
-        # Datos base de inventario
+
         self.subcategoria = SubCategoria.objects.create(nombre='Insumos Básicos')
         self.producto_cafe = Producto.objects.create(
             nombre='Café Verde',
@@ -42,13 +41,11 @@ class TestMovementsFlow:
         self.bodega_principal.catalogo_admitido = [CategoriaPrincipal.MATERIA_PRIMA]
         self.bodega_principal.save()
 
-        # URLs (Asumiendo que seguirán el estándar REST)
-        # Nota: Estas URLs fallarán hasta que se implemente la vista y el enrutador correspondientes.
         self.recepciones_url = '/api/v1/movements/recepciones/'
         self.movimientos_url = '/api/v1/movements/historial/'
 
     def test_cp023_registro_exitoso_recepcion(self, api_client):
-        """CP-023: Registro exitoso de recepción de mercancía."""
+
         api_client.force_authenticate(user=self.jefe_bodega)
         payload = {
             'bodega': str(self.bodega_principal.id),
@@ -67,14 +64,14 @@ class TestMovementsFlow:
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_cp024_recepcion_producto_no_registrado(self, api_client):
-        """CP-024: Recepción con producto no registrado."""
+
         api_client.force_authenticate(user=self.jefe_bodega)
         import uuid
         payload = {
             'bodega': str(self.bodega_principal.id),
             'detalles': [
                 {
-                    'producto': str(uuid.uuid4()), # UUID inexistente
+                    'producto': str(uuid.uuid4()),
                     'cantidad': '100.00'
                 }
             ]
@@ -83,18 +80,17 @@ class TestMovementsFlow:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_cp044_registro_automatico_movimiento_entrada(self, api_client):
-        """CP-044: Registro automático de movimiento de entrada tras recepción."""
+
         api_client.force_authenticate(user=self.jefe_bodega)
-        # 1. Crear recepción
+
         payload_recepcion = {
             'bodega': str(self.bodega_principal.id),
             'detalles': [{'producto': str(self.producto_cafe.id), 'cantidad': '100.00'}]
         }
         recepcion_response = api_client.post(self.recepciones_url, payload_recepcion, format='json')
-        
-        # 2. Verificar si se generó el movimiento en el historial
+
         response = api_client.get(self.movimientos_url)
-        # Asumiendo que el GET list retorna un paginador o lista directa
+
         resultados = response.json().get('results', response.json())
         movimiento_encontrado = any(
             m['tipo'] == 'ENTRADA' and m['producto'] == str(self.producto_cafe.id)
@@ -103,11 +99,10 @@ class TestMovementsFlow:
         assert movimiento_encontrado == True
 
     def test_cp047_filtrado_movimientos(self, api_client):
-        """CP-047: Filtrado de movimientos por producto, tipo y fecha."""
+
         api_client.force_authenticate(user=self.jefe_bodega)
-        # Enviar petición con query params
+
         url_con_filtros = f"{self.movimientos_url}?producto={self.producto_cafe.id}&tipo=ENTRADA"
         response = api_client.get(url_con_filtros)
-        
-        # Debe responder un 200 OK
+
         assert response.status_code == status.HTTP_200_OK
