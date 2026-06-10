@@ -123,5 +123,5 @@ class TestUserModel:
         assert jefe_bodega.es_gerente is False
 
         # Comprobamos las reglas de negocio para Operario
-        assert operario.es_jefe_operario is True  
+        assert operario.es_operario is True  
         assert operario.puede_aprobar_traslados is False
