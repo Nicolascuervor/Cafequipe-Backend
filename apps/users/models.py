@@ -82,8 +82,12 @@ class User(AbstractUser):
         return self.rol == self.Rol.JEFE_BODEGA
 
     @property
-    def es_jefe_operario(self):
+    def es_operario(self):
         return self.rol == self.Rol.OPERARIO
+
+    @property
+    def es_jefe_produccion(self):
+        return self.rol == self.Rol.JEFE_PRODUCCION
 
     @property
     def puede_aprobar_traslados(self):

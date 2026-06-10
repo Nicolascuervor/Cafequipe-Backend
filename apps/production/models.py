@@ -145,6 +145,16 @@ class OrdenProduccion(AuditModel):
     def __str__(self):
         return f'Orden {self.codigo_lote} - {self.receta.producto_terminado.nombre}'
 
+    def clean(self):
+        super().clean()
+        if self.bodega_destino_id:
+            # Validar que la bodega destino permite almacenar productos terminados (PR)
+            if 'PR' not in self.bodega_destino.catalogo_admitido:
+                from django.core.exceptions import ValidationError
+                raise ValidationError({
+                    'bodega_destino': f'La bodega {self.bodega_destino.nombre} no permite almacenar Productos Terminados (PR).'
+                })
+
 class TipoParametro(models.TextChoices):
     BOOLEANO = 'BOOL', 'Aprobado / Rechazado (Sí/No)'
     DECIMAL = 'NUM', 'Valor Numérico (Decimal)'
