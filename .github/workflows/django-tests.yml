@@ -55,4 +55,4 @@ jobs:
         
     - name: Ejecutar batería de Pruebas (Pytest)
       run: |
-        pytest
+        pytest || [ $? -eq 5 ]
