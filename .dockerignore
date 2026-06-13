@@ -1,0 +1,33 @@
+# Entornos virtuales y dependencias locales
+# Ignoramos la carpeta venv para que no se copien miles de archivos al contenedor
+venv/
+env/
+.env
+
+# Archivos compilados de Python
+# Evitamos copiar caché que fue generada en tu sistema operativo (Windows)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Control de versiones
+# No necesitamos el historial de git dentro de la imagen Docker
+.git/
+.gitignore
+
+# Archivos IDE / Editor
+# Configuraciones específicas de VS Code o PyCharm
+.vscode/
+.idea/
+
+# Tests y cobertura
+# No son necesarios para correr la aplicación
+.pytest_cache/
+.coverage
+
+# Documentos
+# Los PDFs y READMEs no necesitan estar en la imagen final
+DocumentosInformativos/
+*.pdf
+*.md
