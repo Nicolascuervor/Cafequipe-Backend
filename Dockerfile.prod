@@ -1,0 +1,52 @@
+# ==========================================
+# ETAPA 1: BUILDER (Construcción)
+# ==========================================
+FROM python:3.12-slim as builder
+
+WORKDIR /app
+
+# Variables de entorno para Python
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Instalamos compiladores y dependencias del sistema necesarias para construir wheels
+RUN apt-get update && apt-get install -y \
+    libpq-dev gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Construimos los "wheels" (paquetes pre-compilados) de nuestras dependencias
+COPY requirements.txt .
+# NOTA: Añadimos gunicorn y whitenoise dinámicamente para el entorno de producción
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels \
+    -r requirements.txt gunicorn whitenoise
+
+# ==========================================
+# ETAPA 2: FINAL (Ejecución en Producción)
+# ==========================================
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Solo instalamos libpq-dev (sin gcc) ya que psycopg2 lo necesita para correr
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiamos los paquetes ya compilados desde la etapa 'builder' y los instalamos
+COPY --from=builder /usr/src/app/wheels /wheels
+COPY --from=builder /app/requirements.txt .
+RUN pip install --no-cache /wheels/*
+
+# Copiamos todo el código fuente final de la aplicación
+COPY . /app/
+
+# Creamos un usuario sin privilegios por seguridad
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Exponemos el puerto
+EXPOSE 8000
+
+# Iniciamos la aplicación usando Gunicorn, apuntando a tu archivo wsgi.py
+# Usamos 3 workers (procesos paralelos) que es el estándar recomendado
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

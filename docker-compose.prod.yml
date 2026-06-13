@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:15
+    container_name: cafequipe_db_prod
+    # Política estricta para producción: Si el contenedor cae, se reinicia solo
+    restart: always
+    env_file:
+      - .env
+    # Se usa un volumen dedicado a producción para no mezclar datos con desarrollo
+    volumes:
+      - db_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      # Le decimos específicamente a Docker que use el archivo de producción
+      dockerfile: Dockerfile.prod
+    container_name: cafequipe_web_prod
+    restart: always
+    env_file:
+      - .env
+    # No hay mapeo de 'volumes' para el código fuente, la imagen es estática
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data_prod:
