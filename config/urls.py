@@ -26,6 +26,9 @@ urlpatterns = [
     path('api/v1/production/', include('apps.production.urls')),
     path('api/v1/reports/', include('apps.reports.urls')),
     path('api/v1/notifications/', include('apps.notifications.urls')),
+    
+    # Asistente IA - OpenRouter
+    path('api/', include('apps.assistant.urls')),
 ]
 
 # Servir archivos media en desarrollo
