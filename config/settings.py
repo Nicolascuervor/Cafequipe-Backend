@@ -45,6 +45,7 @@ LOCAL_APPS = [
     'apps.production',
     'apps.reports',
     'apps.notifications',
+    'apps.assistant',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -213,4 +214,9 @@ EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='Cafequipe <noreply@cafequipe.com>')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='Cafequipe <noreply@cafequipe.com>')
+
+# OPENROUTER
+OPENROUTER_API_KEY = env('OPENROUTER_API_KEY', default='')
+OPENROUTER_BASE_URL = env('OPENROUTER_BASE_URL', default='https://openrouter.ai/api/v1')
+OPENROUTER_MODEL = env('OPENROUTER_MODEL', default='openrouter/free')
