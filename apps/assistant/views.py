@@ -3,10 +3,12 @@ import traceback
 
 import httpx
 from django.conf import settings
+from django.http import StreamingHttpResponse
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import json
 
 from .services import get_fallback_response, get_system_context, needs_system_data
 
@@ -65,15 +67,19 @@ class AssistantChatView(APIView):
                 messages.extend(history)
             messages.append({'role': 'user', 'content': message})
 
-            answer = self._call_openrouter(messages)
-            logger.info("Respuesta recibida de OpenRouter exitosamente")
-            return Response({'answer': answer})
+            stream_generator = self._call_openrouter(messages)
+            logger.info("Iniciando streaming desde OpenRouter exitosamente")
+            response = StreamingHttpResponse(stream_generator, content_type='text/event-stream')
+            response['Cache-Control'] = 'no-cache'
+            response['X-Accel-Buffering'] = 'no'
+            return response
 
         except _RateLimitError:
             logger.warning("Rate limit de OpenRouter — intentando fallback local")
             fallback = get_fallback_response(message)
             if fallback:
-                return Response({'answer': fallback})
+                chunk = json.dumps({"choices": [{"delta": {"content": fallback}}]})
+                return StreamingHttpResponse([f"data: {chunk}\n\n"], content_type='text/event-stream')
             return Response(
                 {'error': (
                     'El asistente está ocupado en este momento. '
@@ -91,7 +97,8 @@ class AssistantChatView(APIView):
             logger.warning("Error del servicio OpenRouter: %s — intentando fallback local", e)
             fallback = get_fallback_response(message)
             if fallback:
-                return Response({'answer': fallback})
+                chunk = json.dumps({"choices": [{"delta": {"content": fallback}}]})
+                return StreamingHttpResponse([f"data: {chunk}\n\n"], content_type='text/event-stream')
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
@@ -113,40 +120,57 @@ class AssistantChatView(APIView):
         payload = {
             'model': settings.OPENROUTER_MODEL,
             'messages': messages,
+            'stream': True,
         }
 
-        logger.info("Enviando petición a OpenRouter con modelo %s", settings.OPENROUTER_MODEL)
+        logger.info("Enviando petición a OpenRouter con modelo %s (Streaming)", settings.OPENROUTER_MODEL)
 
         try:
-            with httpx.Client(timeout=30.0) as client:
-                response = client.post(
-                    '%s/chat/completions' % settings.OPENROUTER_BASE_URL,
-                    headers=headers,
-                    json=payload,
-                )
+            client = httpx.Client(timeout=60.0)
+            request = client.build_request(
+                'POST',
+                '%s/chat/completions' % settings.OPENROUTER_BASE_URL,
+                headers=headers,
+                json=payload
+            )
+            response = client.send(request, stream=True)
 
             if response.status_code == 429:
-                logger.error("Rate limit: %s", response.text)
+                response.close()
+                client.close()
+                logger.error("Rate limit")
                 raise _RateLimitError()
             if response.status_code in (401, 403):
+                response.close()
+                client.close()
                 raise _AuthError()
             if response.status_code == 402:
+                response.close()
+                client.close()
                 raise _ServiceError('Créditos insuficientes en OpenRouter.')
             if response.status_code == 404:
+                response.close()
+                client.close()
                 raise _ServiceError('El modelo configurado no está disponible en OpenRouter.')
             if response.status_code >= 500:
+                response.close()
+                client.close()
                 raise _ServiceError(
                     'Error del servidor OpenRouter (%s).' % response.status_code
                 )
 
             response.raise_for_status()
-            data = response.json()
+            
+            def stream_generator():
+                try:
+                    for line in response.iter_lines():
+                        if line:
+                            yield f"{line}\n\n"
+                finally:
+                    response.close()
+                    client.close()
 
-            choices = data.get('choices')
-            if not choices or not choices[0].get('message', {}).get('content'):
-                raise _ServiceError('Respuesta vacía del asistente.')
-
-            return choices[0]['message']['content']
+            return stream_generator()
 
         except httpx.ConnectError as exc:
             raise _ServiceError(
