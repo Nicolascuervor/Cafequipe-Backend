@@ -60,8 +60,8 @@
                             <table border="0" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
                                 <tr>
                                     <td align="center" style="border-radius: 12px; background-color: #E27923; box-shadow: 0 4px 12px rgba(226, 121, 35, 0.2);">
-                                        <a href="{{ reset_url }}" target="_blank" style="padding: 16px 40px; display: inline-block; color: #FFFFFF; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 12px; letter-spacing: 0.5px;">
-                                            Proteger mi cuenta
+                                        <a href="{% if unrecognized_url %}{{ unrecognized_url }}{% else %}{{ reset_url }}{% endif %}" target="_blank" style="padding: 16px 40px; display: inline-block; color: #FFFFFF; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 12px; letter-spacing: 0.5px;">
+                                            No reconozco este dispositivo
                                         </a>
                                     </td>
                                 </tr>

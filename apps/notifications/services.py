@@ -82,14 +82,20 @@ def send_registration_email(user):
         notification_type=NotificationLog.NotificationType.REGISTRATION
     )
 
-def send_login_alert_email(user, ip_address, user_agent):
+def send_login_alert_email(user, ip_address, user_agent, uidb64=None, token=None, device_id=None):
     subject = 'Alerta de Inicio de Sesión - Cafequipe'
     frontend_url = settings.CORS_ALLOWED_ORIGINS[0] if hasattr(settings, 'CORS_ALLOWED_ORIGINS') else 'http://localhost:5173'
+    
+    unrecognized_url = None
+    if uidb64 and token:
+        unrecognized_url = f"{frontend_url}/unrecognized-device?uidb64={uidb64}&token={token}&device_id={device_id or ''}"
+        
     context = {
         'user': user,
         'ip_address': ip_address,
         'device_info': user_agent,
-        'reset_url': f"{frontend_url}/forgot-password"
+        'reset_url': f"{frontend_url}/forgot-password",
+        'unrecognized_url': unrecognized_url,
     }
     send_async_email(
         user=user,
