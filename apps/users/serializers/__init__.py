@@ -6,6 +6,7 @@ from .ChangePasswordSerializer import ChangePasswordSerializer
 from .CustomTokenObtainPairSerializer import CustomTokenObtainPairSerializer
 from .PasswordResetRequestSerializer import PasswordResetRequestSerializer
 from .PasswordResetConfirmSerializer import PasswordResetConfirmSerializer
+from .TrustedDeviceSerializer import TrustedDeviceSerializer
 
 __all__ = [
     'UserRegisterSerializer',
@@ -15,4 +16,5 @@ __all__ = [
     'CustomTokenObtainPairSerializer',
     'PasswordResetRequestSerializer',
     'PasswordResetConfirmSerializer',
+    'TrustedDeviceSerializer',
 ]

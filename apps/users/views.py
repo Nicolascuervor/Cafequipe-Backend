@@ -24,7 +24,10 @@ from .serializers import (
     ChangePasswordSerializer,
     PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
+    TrustedDeviceSerializer,
 )
+
+from .models import TrustedDevice
 
 from django.core.cache import cache
 from .throttles import LoginFailedThrottle
@@ -305,6 +308,16 @@ class PasswordResetConfirmView(generics.GenericAPIView):
             user.set_password(new_password)
             user.save(update_fields=['password'])
             
+            # --- NUEVA LOGICA: Invalidar todas las sesiones existentes ---
+            try:
+                from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+                tokens = OutstandingToken.objects.filter(user=user)
+                for t in tokens:
+                    BlacklistedToken.objects.get_or_create(token=t)
+            except Exception as e:
+                # Si hay problemas con el log de tokens (ej. no está instalado correctamente), loggear y continuar
+                print(f"Error blacklisting tokens: {e}")
+            
             # Auditar el reseteo
             create_audit_log(
                 user=user,
@@ -324,4 +337,74 @@ class PasswordResetConfirmView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+@extend_schema(tags=['Dispositivos'])
+class TrustedDeviceListView(generics.ListAPIView):
+    serializer_class = TrustedDeviceSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return TrustedDevice.objects.filter(user=self.request.user)
+
+@extend_schema(tags=['Dispositivos'])
+class TrustedDeviceDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = TrustedDeviceSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return TrustedDevice.objects.filter(user=self.request.user)
+
+class UnrecognizedDeviceView(APIView):
+    """
+    Vista llamada cuando el usuario hace clic en 'No reconozco este dispositivo'.
+    Espera un token temporal para autenticar la acción sin pedir contraseña (el mismo del reset).
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request, *args, **kwargs):
+        uidb64 = request.data.get('uidb64')
+        token = request.data.get('token')
+        device_id = request.data.get('device_id')
+        
+        if not uidb64 or not token:
+            return Response({"detail": "Faltan credenciales."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+            
+        if user is not None and default_token_generator.check_token(user, token):
+            # 1. Invalidar todas las sesiones
+            try:
+                from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+                tokens = OutstandingToken.objects.filter(user=user)
+                for t in tokens:
+                    BlacklistedToken.objects.get_or_create(token=t)
+            except Exception as e:
+                pass
+                
+            # 2. Marcar el dispositivo como NO confiable si se provee
+            if device_id:
+                device = TrustedDevice.objects.filter(user=user, device_id=device_id).first()
+                if device:
+                    device.is_trusted = False
+                    device.save(update_fields=['is_trusted'])
+                    
+            create_audit_log(
+                user=user,
+                action=AuditLog.Action.USER_UPDATED,
+                module=AuditLog.Module.AUTH,
+                description=f'Dispositivo no reconocido reportado ({device_id}). Sesiones cerradas.',
+                request=request,
+            )
+
+            return Response(
+                {"detail": "Sesiones cerradas. Por favor, restablece tu contraseña."},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {"detail": "El enlace no es válido o ha expirado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )

@@ -12,6 +12,6 @@ Si fuiste tú, puedes ignorar tranquilamente este mensaje de seguridad.
 
 ¿No reconoces esta actividad?
 Te sugerimos que restablezcas tu contraseña de inmediato y contactes con el administrador para asegurar tu cuenta.
-Enlace para proteger cuenta: {{ reset_url }}
+Enlace para proteger cuenta: {% if unrecognized_url %}{{ unrecognized_url }}{% else %}{{ reset_url }}{% endif %}
 
 La seguridad de tu cuenta es nuestra prioridad.

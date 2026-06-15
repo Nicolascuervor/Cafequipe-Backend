@@ -30,4 +30,9 @@ urlpatterns = [
   
     path('users/',       views.UserListView.as_view(),   name='user-list'),
     path('users/<uuid:pk>/', views.UserDetailView.as_view(), name='user-detail'),
+
+    # Dispositivos confiables
+    path('devices/', views.TrustedDeviceListView.as_view(), name='device-list'),
+    path('devices/<uuid:pk>/', views.TrustedDeviceDetailView.as_view(), name='device-detail'),
+    path('unrecognized-device/', views.UnrecognizedDeviceView.as_view(), name='unrecognized-device'),
 ]

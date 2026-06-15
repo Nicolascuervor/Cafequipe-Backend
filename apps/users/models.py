@@ -92,3 +92,22 @@ class User(AbstractUser):
     @property
     def puede_aprobar_traslados(self):
         return self.rol in [self.Rol.JEFE_BODEGA, self.Rol.GERENTE]
+
+class TrustedDevice(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trusted_devices')
+    device_id = models.CharField(max_length=255, db_index=True)
+    device_name = models.CharField(max_length=255, blank=True, default='Dispositivo desconocido')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    is_trusted = models.BooleanField(default=True)
+    last_login = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Dispositivo Confiable'
+        verbose_name_plural = 'Dispositivos Confiables'
+        unique_together = ('user', 'device_id')
+        ordering = ['-last_login']
+
+    def __str__(self):
+        return f"{self.device_name} ({self.device_id}) - {'Confiable' if self.is_trusted else 'No confiable'} - {self.user.email}"
