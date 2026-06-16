@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.db import transaction
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, RestrictedError
 from apps.audit.models import AuditLog
 from apps.audit.services import create_audit_log
 from apps.inventory.models import Bodega
@@ -44,7 +44,7 @@ class RecetaViewSet(viewsets.ModelViewSet):
                 description=f'Receta para {nombre} eliminada.',
                 request=self.request,
             )
-        except ProtectedError:
+        except (ProtectedError, RestrictedError):
             raise serializers.ValidationError({"detail": "No se puede eliminar esta receta porque está siendo utilizada en órdenes de producción."})
 
 class OrdenProduccionViewSet(viewsets.ModelViewSet):
@@ -134,7 +134,7 @@ class OrdenProduccionViewSet(viewsets.ModelViewSet):
                 description=f'Orden de producción {lote} eliminada.',
                 request=self.request,
             )
-        except ProtectedError:
+        except (ProtectedError, RestrictedError):
             raise serializers.ValidationError({"detail": "No se puede eliminar esta orden de producción por restricciones de integridad."})
 
 class ParametroCalidadViewSet(viewsets.ModelViewSet):
@@ -154,8 +154,8 @@ class ParametroCalidadViewSet(viewsets.ModelViewSet):
                 description=f'Parámetro de calidad {nombre} eliminado.',
                 request=self.request,
             )
-        except ProtectedError:
-            raise serializers.ValidationError({"detail": "No se puede eliminar este parámetro porque está en uso en controles de calidad."})
+        except (ProtectedError, RestrictedError):
+            raise serializers.ValidationError({"detail": "No se puede eliminar este parámetro porque ya existen registros históricos de calidad que lo usan. Por favor, desactívelo en lugar de eliminarlo."})
 
 class ControlCalidadLoteViewSet(viewsets.ModelViewSet):
     queryset = ControlCalidadLote.objects.all().select_related('orden_produccion').prefetch_related('valores__parametro')
@@ -176,7 +176,7 @@ class ControlCalidadLoteViewSet(viewsets.ModelViewSet):
                 description=f'Control de calidad para la orden {lote} eliminado.',
                 request=self.request,
             )
-        except ProtectedError:
+        except (ProtectedError, RestrictedError):
             raise serializers.ValidationError({"detail": "No se puede eliminar este control de calidad."})
 
 
@@ -274,6 +274,6 @@ class TicketInsumoViewSet(viewsets.ModelViewSet):
                 description=f'Ticket de insumos para la orden {lote} eliminado.',
                 request=self.request,
             )
-        except ProtectedError:
+        except (ProtectedError, RestrictedError):
             raise serializers.ValidationError({"detail": "No se puede eliminar este ticket de insumos."})
 
