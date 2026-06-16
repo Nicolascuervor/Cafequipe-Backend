@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Sum, F, DecimalField, ExpressionWrapper
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper, Count, Q
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.http import HttpResponse
@@ -9,9 +9,11 @@ import openpyxl
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from decimal import Decimal
+from datetime import timedelta
 
 from apps.inventory.models import Producto, StockBodega
 from apps.production.models import OrdenProduccion, EstadoOrden
+from apps.movements.models import Movimiento, SolicitudInterna
 
 class ABCAnalysisView(APIView):
     permission_classes = [IsAuthenticated]
@@ -214,3 +216,69 @@ class ExportPDFView(APIView):
         p.showPage()
         p.save()
         return response
+
+class DashboardMetricsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # 1. KPIs
+        total_skus = Producto.objects.count()
+        total_stock = StockBodega.objects.aggregate(total=Sum('stock_disponible'))['total'] or Decimal('0.0')
+        
+        alertas = StockBodega.objects.annotate(
+            proyectado=F('stock_disponible') + F('pedidos_abiertos') - F('ordenes_atrasadas')
+        ).filter(Q(stock_disponible__lte=F('producto__inventario_seguridad')) | Q(proyectado__lte=F('producto__punto_reorden'))).count()
+        
+        solicitudes_pendientes = SolicitudInterna.objects.filter(estado='PENDIENTE').count()
+
+        # 2. Flujo 7 días
+        hoy = timezone.now().date()
+        flujo_data = []
+        dias_espanol = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+        
+        for i in range(6, -1, -1):
+            fecha_dia = hoy - timedelta(days=i)
+            movs_dia = Movimiento.objects.filter(created_at__date=fecha_dia)
+            entradas = movs_dia.filter(tipo='ENTRADA').aggregate(t=Sum('cantidad'))['t'] or Decimal('0.0')
+            salidas = movs_dia.filter(tipo='SALIDA').aggregate(t=Sum('cantidad'))['t'] or Decimal('0.0')
+            
+            flujo_data.append({
+                "d": dias_espanol[fecha_dia.weekday()],
+                "entradas": float(entradas),
+                "salidas": float(salidas)
+            })
+
+        # 3. ABC Data
+        abc_counts = Producto.objects.values('clasificacion').annotate(c=Count('id'))
+        abc_dict = {item['clasificacion']: item['c'] for item in abc_counts}
+        abc_data = [
+            {"name": "Clase A", "value": abc_dict.get('A', 0), "color": "var(--caramel)"},
+            {"name": "Clase B", "value": abc_dict.get('B', 0), "color": "var(--coffee-medium)"},
+            {"name": "Clase C", "value": abc_dict.get('C', 0), "color": "var(--beige)"},
+        ]
+
+        # 4. Movimientos recientes
+        movimientos_qs = Movimiento.objects.select_related('producto', 'bodega', 'usuario').order_by('-created_at')[:7]
+        movimientos_recientes = []
+        for m in movimientos_qs:
+            movimientos_recientes.append({
+                "id": str(m.id)[:8].upper(),
+                "type": m.get_tipo_display(),
+                "product": m.producto.nombre,
+                "warehouse": m.bodega.nombre,
+                "qty": float(m.cantidad),
+                "unit": m.producto.get_unidad_medida_display(),
+                "user": m.usuario.get_full_name() or m.usuario.username
+            })
+
+        return Response({
+            "kpis": {
+                "skus": total_skus,
+                "stock": float(total_stock),
+                "alertas": alertas,
+                "solicitudes_pendientes": solicitudes_pendientes
+            },
+            "flujo": flujo_data,
+            "abc": abc_data,
+            "movimientos": movimientos_recientes
+        })

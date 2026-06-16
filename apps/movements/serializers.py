@@ -52,17 +52,26 @@ class RecepcionSerializer(serializers.ModelSerializer):
 
 
 class DetalleSolicitudSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
+    producto_unidad = serializers.ReadOnlyField(source='producto.get_unidad_medida_display')
+
     class Meta:
         model = DetalleSolicitud
-        fields = ['producto', 'cantidad']
+        fields = ['id', 'producto', 'producto_nombre', 'producto_unidad', 'cantidad']
+        read_only_fields = ['id']
 
 class SolicitudInternaSerializer(serializers.ModelSerializer):
     detalles = DetalleSolicitudSerializer(many=True)
+    solicitante_nombre = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = SolicitudInterna
-        fields = ['id', 'estado', 'motivo', 'detalles']
-        read_only_fields = ['id', 'estado']
+        fields = ['id', 'estado', 'motivo', 'detalles', 'solicitante_nombre', 'created_at']
+        read_only_fields = ['id', 'estado', 'created_at']
+
+    def get_solicitante_nombre(self, obj):
+        return f"{obj.solicitante.first_name} {obj.solicitante.last_name}".strip() or obj.solicitante.username
 
     def validate_detalles(self, value):
         for det in value:
